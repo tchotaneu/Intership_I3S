@@ -383,10 +383,25 @@ if __name__ == "__main__":
         print(
             f"{ctr + 1} len={nb_pred} true_hits={nb_th} found={nb_found} f1_score={f1_scores[-1]:.5f}, mean={statistics.mean(f1_scores):.5f}, variance={statistics.pstdev(f1_scores):.5f}, Q25={quartiles[0]:.5f}, Q50={quartiles[1]:.5f}, Q75={quartiles[2]:.5f}, low={low:.5f}, high={high:.5f}, out_low=[{','.join(out_low)}], out_high=[{','.join(out_high)}] pvalue={pvalue}"
         )
+        moyenne=statistics.mean(f1_scores)
+        moyenne_formattee = f"{moyenne:.5f}"
 
     #opreration de sauvergarde et de supression.
-        arch=Archiver()   
-        arch.save_in_csv("sauvegarde/"+arg.my_model+"/resultats/mon_fichier.csv", {'graphe_run': ctr + 1,'metrique':arg.metrique, 'modele_vue2':arg.graphe,'longueur_predit': nb_pred,'true_hits': nb_th,'nombre_noeud_touve': nb_found,'f1_score': f"{f1_scores[-1]:.5f}",'Truehits': truehits,'Noeud_predit':pred})
+        arch=Archiver() 
+        if arg.my_model=="Amine":
+             arch.save_in_csv("sauvegarde/"+arg.my_model+"/resultats/mon_fichier.csv",
+                               {'graphe_run': ctr + 1,'longueur_predit': nb_pred,
+                                'true_hits': nb_th,'nombre_noeud_touve': nb_found,
+                                'f1_score': f"{f1_scores[-1]:.5f}",
+                                'mean': moyenne_formattee ,
+                                'Truehits': truehits,'Noeud_predit':pred})
+        else:
+            arch.save_in_csv("sauvegarde/"+arg.my_model+"/resultats/mon_fichier.csv", 
+                             {'graphe_run': ctr + 1,'metrique':arg.metrique, 
+                              'modele_vue2':arg.graphe,'longueur_predit': nb_pred,
+                              'true_hits': nb_th,'nombre_noeud_touve': nb_found,
+                              'f1_score': f"{f1_scores[-1]:.5f}",
+                              'mean':moyenne_formattee ,'Truehits': truehits,'Noeud_predit':pred})
         arch.copy_directory(arg.my_model,arch.dest+arg.my_model+str(ctr+1))
         if arg.my_model=="Amine":
             arch.add_to_zip(arch.dest+arg.my_model+".zip",arch.dest+arg.my_model+str(ctr+1))
