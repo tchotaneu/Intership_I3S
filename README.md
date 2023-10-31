@@ -23,7 +23,7 @@ Alternatively, you can create the environment and install manually the dependenc
 ```bash
 conda create -n amine-env python=3.6
 conda activate amine-env
-conda install -c conda-forge -c anaconda -c numba networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl python-levenshtein pyyaml
+conda install -c conda-forge -c anaconda -c numba networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl python-levenshtein pyyaml   pytorch  torchvision  matplotlib
 ```
 
 At this point, you can download network files with the following command:

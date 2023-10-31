@@ -67,4 +67,3 @@ ppi_custom_graph:
   source_col: 0
   target_col: 1
   header: null # Row number to use as the column names
-
