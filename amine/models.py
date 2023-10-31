@@ -33,14 +33,14 @@ import numpy as np
 from scipy.optimize import bisect
 from gensim.models import FastText, Word2Vec
 from scipy.spatial import distance
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 from dimension_reduction import node2vec
 from dimension_reduction.pecanpy import node2vec as n2v
 import buid_views
 import torch
-import torch.nn as nn
-import torch.optim as optim
+#import torch.nn as nn
+#import torch.optim as optim
 from torch.autograd import Variable
 import time
 import random
@@ -54,7 +54,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 from scipy.stats import pearsonr
-from node2vec import Node2Vec
+#from node2vec import Node2Vec # appelle de node2vec de mane 
 
 class Model(ABC):
     """
@@ -201,6 +201,13 @@ class Node2vec(Model):
                 workers=self.workers,
                 epochs=self.epoch,
             )  # iter=self.epoch)
+            # bout de code ajouter pour sauvarder l'embedding 
+            words = self.model.wv.index_to_key
+            vectors = self.model.wv.vectors
+            embedding = np.column_stack((words, vectors))
+            fichier="sauvegarde/"+self.directory+"/embedding/embedding.txt"
+            np.savetxt(fichier, embedding, delimiter=' ', fmt='%f')
+
 
     def save(self, fname_or_handle: str):
         """
@@ -797,6 +804,7 @@ class SaeView(MultiView):
         super().__init__()
         """Declare variables."""
         self.epochs=10
+        self.directed=False
 
         self.parametreNode2vec1=[ {'p':0.25,  'q':0.5, 'window_size':10, 'num_walks': 10, 'walk_length': 20,'dimensions':48,},
                                  {'p':1.0,  'q':1.0, 'window_size':10, 'num_walks': 10, 'walk_length': 15,'dimensions':16,},
@@ -849,8 +857,8 @@ class SaeView(MultiView):
                 # Vérifiez si le graphe est du bon format
                 if not isinstance(G, nx.Graph):
                     raise ValueError("Les éléments de la liste 'graphs' doivent être des objets 'networkx.Graph'.")
-
-                # Créez un modèle Node2Vec
+                
+                """# Créez un modèle Node2Vec
                 node2vec = Node2Vec(G, dimensions=node2vec_params['dimensions'],
                                     walk_length=node2vec_params['walk_length'],
                                     num_walks=node2vec_params['num_walks'],)
@@ -861,11 +869,33 @@ class SaeView(MultiView):
                                    # min_count=node2vec_params['min_count'],
                                     #batch_words=node2vec_params['batch_words'],
                                     sg=1)
+                """
+
+                my_graph = buid_views.Graph(G, self.directed, node2vec_params['p'],node2vec_params['q'])
+                my_graph.preprocess_transition_probs()
+                my_walks = my_graph.simulate_walks(node2vec_params['num_walks'], node2vec_params['walk_length'])
+                my_model= Word2Vec( my_walks,
+                                       vector_size=node2vec_params['dimensions'],  # size=self.dimensions,
+                                       window=node2vec_params['window_size'],
+                                       min_count=5,
+                                       negative=5,
+                                       sg=1,
+                                       #workers=self.workers,
+                                       epochs=self.epochs,
+                                      ) 
+
+
+
 
                 # Générez les embeddings de chaque vue  et stockez-les
-                embeddings = [[int(node)] + list(model.wv[str(node)]) for node in G.nodes()]
-                my_array = np.array(embeddings)
-                views.append(my_array)
+                words = my_model.wv.index_to_key
+                vectors = my_model.wv.vectors
+                embedding = np.column_stack((words, vectors))
+                print("la forme est ", embedding.shape)
+                print(embedding[:,0])
+               # embeddings = [[int(node)] + list(my_embeddings.wv[str(node)]) for node in G.nodes()]
+                #my_array = np.array(embeddings)
+                views.append(embedding)
 
             return views   
 
