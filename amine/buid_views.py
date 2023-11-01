@@ -197,7 +197,7 @@ class GraphBuilder():
         
         return G_prime
     
-    def construct_graph4(self, G: nx.Graph, quantile: float = 0.4,no_singletons:bool = True) -> nx.Graph:
+    def construct_graph4(self, G: nx.Graph, quantile: float = 0.4, no_singletons:bool = True) -> nx.Graph:
         """
         Construit un graphe en ajoutant des arêtes entre les nœuds dont la différence de "Z_Scores" est inférieure à 0.4.
         
@@ -417,7 +417,7 @@ class Archiver():
         :param src_dir: Le chemin du dossier source.
         :param dest_dir: Le chemin du dossier de destination.
         """
-        src_dir=self.source+src
+        src_dir=src
        
         try:
             # Vérifie si le dossier source existe
@@ -518,6 +518,69 @@ class Archiver():
             print(f"Erreur lors de la suppression du répertoire {repertoire}: {e}")
 
 
+    def delete_file_ifexist(self,nom_fichier, nom_repertoire):
+        chemin_fichier = os.path.join(nom_repertoire, nom_fichier)
+
+        if os.path.isfile(chemin_fichier):
+            os.remove(chemin_fichier)
+            print(f"Le fichier {nom_fichier} a été supprimé.")
+        else:
+            print(f"Le fichier {nom_fichier} n'existe pas dans le répertoire {nom_repertoire}.")
+    
+
+    
+
+    def create_model_directories(self,base_directory, model_name,module_size, metric=None,graphe=None,sing=None):
+        rep_save = os.path.join(base_directory,model_name,model_name)
+        
+        if metric:
+            rep_save += f"_{metric[:3]}"
+        
+        rep_save += f"_size_{module_size}"
+        if graphe:
+             rep_save += f"_gra_{graphe}"
+        if sing:
+             rep_save += f"_NoSin_{sing}"
+        
+        directories_to_create = [
+            "dataset",
+            "embedding",
+            "resultats"
+        ]
+        if model_name == 'SaeView':
+            directories_to_create.extend([
+                "graphique_fonction"
+            ])
+        elif model_name == 'ManeView':
+            directories_to_create.extend([
+                "graphique_fonction",
+                "Couples_ids",
+                "Couples_nodes",
+                "Marches",
+                "Paires"
+            ])
+        
+        for directory_name in directories_to_create:
+            directory_path = os.path.join(rep_save, directory_name)
+            os.makedirs(directory_path, exist_ok=True)
+           # print(f"Le répertoire '{directory_path}' a été créé.")
+
+        return rep_save
+
+
+
+    # Exemple d'utilisation :
+    #noms = ["/chemin/vers/repertoire1", "/chemin/vers/repertoire2", "/chemin/vers/repertoire3"]
+    #creer_repertoires(*noms)
+
+
+    # Exemple d'utilisation :
+    #nom_fichier = "mon_fichier.txt"
+    #nom_repertoire = "/chemin/vers/le/repertoire"
+    #supprimer_fichier_dans_repertoire(nom_fichier, nom_repertoire)
+
+
+
 
 # reference:
 # https://github.com/sezinata/MANE.git
@@ -559,7 +622,7 @@ def construct_word2vec_pairs(G, view_id, common_nodes, pvalue, qvalue, window_si
     Generer et sauvegarder les pairs de noeud  Word2Vec 
     """
     if output:
-        path = "sauvegarde/"+directory+"/"
+        path = directory #######################"""###################"
     list_neigh = []
     G_ = Graph(G, False, pvalue, qvalue)
     G_.preprocess_transition_probs()
@@ -567,7 +630,7 @@ def construct_word2vec_pairs(G, view_id, common_nodes, pvalue, qvalue, window_si
     walks = G_.simulate_walks(n_walk,
                               walk_length)
     end = time.time()
-    walk_file = path + "Marches/Walks_" + str(view_id) + ".txt"
+    walk_file = path + "/Marches/Walks_" + str(view_id) + ".txt"
     elapsed = end - start_time
     save_walks(walks, walk_file, elapsed)
     
@@ -583,16 +646,16 @@ def construct_word2vec_pairs(G, view_id, common_nodes, pvalue, qvalue, window_si
                 # don't train on the `word` itself
                 if word != word2:
                     list_neigh.append((node2idx[word], node2idx[word2]))
-    pair_file = path + "Paires/Pairs_" + str(view_id) + ".txt"
+    pair_file = path + "/Paires/Pairs_" + str(view_id) + ".txt"
     list_neigh.sort(key=lambda x: x[0])  # sorted based on keys
     list_neigh = np.array(list_neigh)
     save_pairs(list_neigh, pair_file, elapsed)
 
     nodes_idx, neigh_idx = zip(*[(tupl[0], tupl[1]) for tupl in list_neigh])  # gives tuple
-    nodesidx_file = path + "Couples_ids/nodesidxPairs_" + str(view_id) + ".txt"
+    nodesidx_file = path + "/Couples_ids/nodesidxPairs_" + str(view_id) + ".txt"
     save_train_neigh(np.array(list(nodes_idx)), nodesidx_file)
 
-    neigh_idx_file = path + "Couples_nodes/neighidxPairs_" + str(view_id) + ".txt"
+    neigh_idx_file = path + "/Couples_nodes/neighidxPairs_" + str(view_id) + ".txt"
     save_train_neigh(np.array(list(neigh_idx)), neigh_idx_file)
     end = time.time()
 

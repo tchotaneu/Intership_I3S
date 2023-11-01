@@ -96,8 +96,10 @@ class Node2vec(Model):
         self.window_size = 5  # 10
         self.workers = 4
         self.epoch = 10  # 10
+        self.directory="Amine"
+        self.savedirectory=None
         
-    def init(self, G: nx.Graph, list_nodes: Iterable = None, precomputed: str = None):
+    def init(self, G: nx.Graph, list_nodes: Iterable = None, precomputed: str = None,save_dire=None):
         """
         Initialize the model with a weighted graph.
 
@@ -111,6 +113,7 @@ class Node2vec(Model):
                       None or path to the precomputed model that must be used, default is None
 
         """
+        self.savedirectory=save_dire
         if list_nodes is None:
             list_nodes = list(G.nodes)
         if precomputed and pathlib.Path(precomputed).is_file():
@@ -205,7 +208,8 @@ class Node2vec(Model):
             words = self.model.wv.index_to_key
             vectors = self.model.wv.vectors
             embedding = np.column_stack((words, vectors))
-            fichier="sauvegarde/"+self.directory+"/embedding/embedding.txt"
+            embedding = embedding.astype(float)
+            fichier=self.savedirectory+"/embedding/embedding.txt"
             np.savetxt(fichier, embedding, delimiter=' ', fmt='%f')
 
 
@@ -433,7 +437,7 @@ class MultiView(Model):
 
     def __init__(self):
         """Declare variables."""
-       
+        self.savedirectory=None
         self.singleton=True
         self.G = nx.Graph()
         self.G1 =nx.Graph()
@@ -573,10 +577,14 @@ class MultiView(Model):
                   choice_metrique:None,
                   dossier:None,
                   no_singleton:None,
-                  my_dict:None):
+                  my_dict:None,
+                  savedirec:None
+                  ):
+        self.savedirectory=savedirec
         self.metrique=choice_metrique
         self.directory=dossier
         valuetrue = my_dict[1]
+
         list_noeuds_isole=self.builGrap.isolated_low_nodes(G)
         print("nombre des noeuds de P_valeurs (0.05) isolée", len(list_noeuds_isole), list_noeuds_isole & valuetrue,len(list_noeuds_isole & valuetrue))
         list_noeuds_totale=self.builGrap.low_nodes(G)
@@ -594,7 +602,7 @@ class MultiView(Model):
             print(f"Le choix du constructeur de graphe '{choice}' n'est pas valide.")
        
         if self.output:
-            a="sauvegarde/"+self.directory+"/dataset/Vue"
+            a=self.savedirectory+"/dataset/Vue"
             self.builGrap.save_graph(G, a+'1.txt')
             self.builGrap.save_graph(self.G, a+'2.txt')
 
@@ -603,7 +611,7 @@ class MultiView(Model):
                                               title="courbe progression de l'apprentissage  ", 
                                               x_label='epoques',
                                               y_label="valeur en fonction du gratient ", 
-                                             save_file="sauvegarde/"+self.directory+"/graphique_fonction/learn_function.png")
+                                             save_file=self.savedirectory+"/graphique_fonction/learn_function.png")
 
     @abstractmethod
     def compute_embedding(G: nx.Graph , G1: nx.Graph):
@@ -689,7 +697,7 @@ class ManeView(MultiView):
                                                                                         walk_length=params['walk_length'],  
                                                                                         output=self.output,  
                                                                                         node2idx=node2idx,
-                                                                                        directory=self.directory
+                                                                                        directory=self.savedirectory
                                                                                     )
 
                         nodes_idx_nets.append(nodes_idx)
@@ -745,7 +753,7 @@ class ManeView(MultiView):
                     concat_tensors = torch.cat((concat_tensors, modelMane.node_embeddings[i_tensor].weight.detach().cpu()), 1)
                 embedding_Multiview = np.array(concat_tensors)
                 if self.output :
-                    emb_file ="sauvegarde/"+self.directory+"/embedding/" + "Embedding_Entrainer_epoques_" + str(epo) + "_" + ".txt"
+                    emb_file =self.savedirectory+"/embedding/" + "Embedding_Entrainer_epoques_" + str(epo) + "_" + ".txt"
                     fo = open(emb_file, 'a+')
                     for idx in range(len(embedding_Multiview)):
                         word = (idx2node[idx])
@@ -784,7 +792,7 @@ class ManeView(MultiView):
             :return: Two lists for all views, each list keeps the node indices of node pairs (node, neigh).
             nodes_idx_nets for node, neigh_idx_nets for neighbor
             """
-            path="sauvegarde/fichierMane/" 
+            path=self.savedirectory
             nodes_idx_nets = []
             neigh_idx_nets = []
 
@@ -805,6 +813,7 @@ class SaeView(MultiView):
         """Declare variables."""
         self.epochs=10
         self.directed=False
+        self.nbre_iterations=10
 
         self.parametreNode2vec1=[ {'p':0.25,  'q':0.5, 'window_size':10, 'num_walks': 10, 'walk_length': 20,'dimensions':48,},
                                  {'p':1.0,  'q':1.0, 'window_size':10, 'num_walks': 10, 'walk_length': 15,'dimensions':16,},
@@ -827,19 +836,12 @@ class SaeView(MultiView):
                                               title="courbe progression de l'apprentissage du SAE ", 
                                               x_label='epoques',
                                               y_label="valeur en fonction du gratient ", 
-                                             save_file="sauvegarde/"+self.directory+"/graphique_fonction/learnSAE.png")
+                                             save_file=self.savedirectory+"/graphique_fonction/learnSAE.png")
         q_ij=modelSae.calcule_qij(Y_init)
         P_ij=modelSae.calculate_Pij(views_probabilities1,views)
-        ylost,embedding=modelSae.optimisation_divergence_kl(Y_init,P_ij,q_ij,taux_apprentissage=0.01, nombre_iterations=10)
+        ylost,embedding=modelSae.optimisation_divergence_kl(Y_init,P_ij,q_ij,taux_apprentissage=0.01, nombre_iterations=self.nbre_iterations)
         
-        #if self.output :
-        #        emb_file ="sauvegarde/"+self.directory+"/embedding/" + "Embedding_Entrainer_" + str(self.epochs) + "_" + ".txt"
-        #        fo = open(emb_file, 'a+')
-        #        for idx in range(len(embedding)):
-        #            word = (embedding[idx])
-        #            fo.write(str(word) + ' ' + ' '.join(map(str,embedding[idx])) + '\n')
-        #        fo.close()
-        fichier="sauvegarde/"+self.directory+"/embedding/embedding.txt"
+        fichier=self.savedirectory+"/embedding/embedding_epos"+str(self.epochs)+"_itera"+str(self.nbre_iterations)+".txt"
         #embedding = np.array(embedding, dtype=float)
         np.savetxt(fichier, embedding, delimiter=' ', fmt='%f')
         return ylost, embedding
@@ -857,19 +859,7 @@ class SaeView(MultiView):
                 # Vérifiez si le graphe est du bon format
                 if not isinstance(G, nx.Graph):
                     raise ValueError("Les éléments de la liste 'graphs' doivent être des objets 'networkx.Graph'.")
-                
-                """# Créez un modèle Node2Vec
-                node2vec = Node2Vec(G, dimensions=node2vec_params['dimensions'],
-                                    walk_length=node2vec_params['walk_length'],
-                                    num_walks=node2vec_params['num_walks'],)
-                                    #workers=node2vec_params['workers'])
 
-                # Entraînez le modèle Node2Vec
-                model = node2vec.fit(window=node2vec_params['window_size'],
-                                   # min_count=node2vec_params['min_count'],
-                                    #batch_words=node2vec_params['batch_words'],
-                                    sg=1)
-                """
 
                 my_graph = buid_views.Graph(G, self.directed, node2vec_params['p'],node2vec_params['q'])
                 my_graph.preprocess_transition_probs()
@@ -891,8 +881,8 @@ class SaeView(MultiView):
                 words = my_model.wv.index_to_key
                 vectors = my_model.wv.vectors
                 embedding = np.column_stack((words, vectors))
-                print("la forme est ", embedding.shape)
-                print(embedding[:,0])
+               # print("la forme est ", embedding.shape)
+               # print(embedding[:,0])
                # embeddings = [[int(node)] + list(my_embeddings.wv[str(node)]) for node in G.nodes()]
                 #my_array = np.array(embeddings)
                 views.append(embedding)

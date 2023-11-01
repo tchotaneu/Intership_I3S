@@ -128,7 +128,7 @@ class Sae_AI(nn.Module):
             loss.backward()
             optimizer.step()
             training_losses.append(loss.item())
-            print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
+            #print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
         
         # Calculer l'embedding initial Y
         with torch.no_grad():

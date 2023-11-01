@@ -24,7 +24,7 @@ import statistics
 import time
 from random import Random
 import sys # 
-
+import os
 import numpy as np
 #importation des fichiers Models 
 import models
@@ -223,6 +223,30 @@ if __name__ == "__main__":
     arg = parse_arguments()
     if arg.my_model != 'Amine' and (arg.graphe is None or arg.metrique is None):
            print("Si le modèle n'est pas 'Amine', vous devez spécifier les arguments 'graphe' et 'metrique'.")
+
+    #preparation des repertoire de sauvegarde .
+    arch=Archiver() 
+   
+    if arg.my_model == 'Amine':
+        save =arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size)
+    elif arg.my_model== 'ManeView':
+        save=arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size, arg.metrique,arg.graphe)
+    elif arg.my_model== 'SaeView':
+        save =arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size, arg.metrique,arg.graphe,arg.no_singleton)
+    else:
+        print("Modèle non défini")
+    
+    nom_fichier=os.path.basename(save)
+    file_zip=nom_fichier+".zip"
+    file_resultat=nom_fichier+".csv"
+    reptoire_resultat=save+"/resultats"
+    reptoire_zip="sauvegarde/fichierZip/"+arg.my_model
+    arch.delete_file_ifexist(file_resultat,reptoire_resultat)
+    arch.delete_file_ifexist(file_zip,reptoire_zip)
+    
+    print("la racine est ",save)
+
+
     """ 
     +-------------------------------------------------------------------------------------+
     We could use : 
@@ -253,6 +277,7 @@ if __name__ == "__main__":
         outfile = open(arg.outfile, "w")
         outfile.write("#graph,time(s),nb found,real size,true hits,pvalue\n")
     for ctr in range(arg.number_of_runs):
+        
         if arg.graph_generation == "guyondata":
             G = Datasets.get_guyon_graph(ctr + 1)
         elif arg.graph_generation == "gencat":
@@ -287,16 +312,16 @@ if __name__ == "__main__":
             #model = models.Node2vec()
         if arg.my_model == 'Amine':
             model = models.Node2vec()
-            model.init(G)
+            model.init(G,save_dire=save)
         elif arg.my_model == 'ManeView':
             model = models.ManeView()
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G))
+            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G),savedirec=save)
         elif arg.my_model == 'SaeView':
             model = models.SaeView()
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G))
+            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G),savedirec=save)
         elif arg.my_model == 'Dbscan':
             model = models.DbscanView()
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,Datasets.get_groups(G),arg.pipe)
+            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,Datasets.get_groups(G),arg.pipe,savedirec=save)
         else:
             raise ValueError(f"Modèle inconnu: {arg.my_model}")
        # model.init(G)
@@ -387,37 +412,34 @@ if __name__ == "__main__":
         moyenne_formattee = f"{moyenne:.5f}"
 
     #opreration de sauvergarde et de supression.
-        arch=Archiver() 
         if arg.my_model=="Amine":
-             arch.save_in_csv("sauvegarde/"+arg.my_model+"/resultats/mon_fichier.csv",
+             arch.save_in_csv(save+"/resultats/"+nom_fichier+".csv",
                                {'graphe_run': ctr + 1,'longueur_predit': nb_pred,
                                 'true_hits': nb_th,'nombre_noeud_touve': nb_found,
                                 'f1_score': f"{f1_scores[-1]:.5f}",
                                 'mean': moyenne_formattee ,
                                 'Truehits': truehits,'Noeud_predit':pred})
         else:
-            arch.save_in_csv("sauvegarde/"+arg.my_model+"/resultats/mon_fichier.csv", 
+            arch.save_in_csv(save+"/resultats/"+nom_fichier+".csv", 
                              {'graphe_run': ctr + 1,'metrique':arg.metrique, 
                               'modele_vue2':arg.graphe,'longueur_predit': nb_pred,
                               'true_hits': nb_th,'nombre_noeud_touve': nb_found,
                               'f1_score': f"{f1_scores[-1]:.5f}",
                               'mean':moyenne_formattee ,'Truehits': truehits,'Noeud_predit':pred})
-        arch.copy_directory(arg.my_model,arch.dest+arg.my_model+str(ctr+1))
-        if arg.my_model=="Amine":
-            arch.add_to_zip(arch.dest+arg.my_model+".zip",arch.dest+arg.my_model+str(ctr+1))
-        else:
-            arch.add_to_zip(arch.dest+arg.metrique+"_"+arg.my_model+".zip",arch.dest+arg.my_model+str(ctr+1))
-          
-        if arg.my_model != "Amine"  :
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/embedding")
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/dataset")
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/graphique_fonction")
-        if arg.my_model=="ManeView" :
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/Couples_ids")
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/Couples_nodes")
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/Marches")
-            arch.deleteFileInDirectory("sauvegarde/"+arg.my_model+"/Paires")
-        arch.delete_directory(repertoire=arch.dest+arg.my_model+str(ctr+1))
+        arch.copy_directory(save,arch.dest+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
 
+        arch.add_to_zip(arch.dest+arg.my_model+"/"+nom_fichier+".zip",arch.dest+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
+     
+        arch.deleteFileInDirectory(save+"/embedding")
+        if arg.my_model != "Amine"  :
+                arch.deleteFileInDirectory(save+"/dataset")
+                arch.deleteFileInDirectory(save+"/graphique_fonction")
+        if arg.my_model=="ManeView" :
+                arch.deleteFileInDirectory(save+"/Couples_ids")
+                arch.deleteFileInDirectory(save+"/Couples_nodes")
+                arch.deleteFileInDirectory(save+"/Marches")
+                arch.deleteFileInDirectory(save+"/Paires")
+        arch.delete_directory(repertoire=arch.dest+"/"+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
+  
     if arg.outfile:
         outfile.close()
