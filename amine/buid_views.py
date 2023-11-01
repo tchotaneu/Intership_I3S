@@ -67,7 +67,7 @@ class DrawCurve():
             print("x_values ou y_values_list sont vides. Impossible de tracer les courbes.")
             return
         
-        plt.figure(figsize=(10,6))  # Vous pouvez ajuster la taille de la figure selon vos besoins
+        plt.figure(figsize=(10,6))  # ajuster la taille de la figure selon vos besoins
         
         for i, y_values in enumerate(y_values_list):
             if legends and len(legends) > i:
@@ -355,13 +355,13 @@ class GraphBuilder():
             # Écrire les nœuds et leurs attributs
             f.write("# Nodes\n")
             for node, data in G.nodes(data=True):
-                weight = data.get('weight', 1)  # Utilisez 1 comme poids par défaut si aucun poids n'est spécifié
+                weight = data.get('weight', 1)  # Utilisons  1 comme poids par défaut si aucun poids n'est spécifié
                 f.write(f"node {node} {weight}\n")
             
             # Écrire les arêtes
             f.write("# Edges\n")
             for u, v, data in G.edges(data=True):
-                weight = data.get('weight', 1)  # Utilisez 1 comme poids par défaut si aucun poids n'est spécifié pour les arêtes
+                weight = data.get('weight', 1)  # Utilisons  1 comme poids par défaut si aucun poids n'est spécifié pour les arêtes
                 f.write(f"edge {u} {v} {weight}\n")
 
 
@@ -403,7 +403,7 @@ class Archiver():
                         # Ajoute le fichier à l'archive zip
                         zipf.write(file_path, arcname=arcname)
             
-            print(f"Le dossier {folder_path} a été ajouté avec succès à {zip_filename}.")
+            print(f"Le dossier {folder_path} a été ajout avec succès à {zip_filename}.")
             
         except Exception as e:
             print(f"Une erreur s'est produite lors de l'ajout du dossier à l'archive zip : {e}")
@@ -412,7 +412,7 @@ class Archiver():
 
     def copy_directory(self,src: str, dest_dir: str):
         """
-        Copie le contenu du dossier source vers le dossier de destination.
+        Copiions  le contenu du dossier source vers le dossier de destination.
         
         :param src_dir: Le chemin du dossier source.
         :param dest_dir: Le chemin du dossier de destination.
@@ -472,7 +472,7 @@ class Archiver():
 
     def deleteFileInDirectory(self, my_directory):
         """
-        Supprime tous les fichiers dans le dossier spécifié.
+        Supprime tous les fichiers dans le dossier spécifie.
         
         :param my_directory: Le chemin du dossier dont vous voulez supprimer tous les fichiers.
         """
@@ -485,7 +485,7 @@ class Archiver():
         for filename in os.listdir(my_directory):
             file_path = os.path.join(my_directory, filename)
             
-            # Vérifie si c'est un fichier et non un dossier, puis le supprime
+            # Vérifie si c'est un fichier et non  dossier, puis le supprime
             if os.path.isfile(file_path):
                 os.remove(file_path)
                 #print(f"Fichier {filename} supprimé avec succès.")
@@ -500,8 +500,8 @@ class Archiver():
 
         Cette fonction tente de supprimer le répertoire spécifié, y compris tout son contenu,
         de manière récursive. En cas de réussite, un message indiquant la suppression
-        réussie est affiché, sauf si le mode silencieux est activé. En cas d'erreur lors de la suppression, un message d'erreur
-        est affiché, fournissant des informations sur la nature de l'erreur.
+        réussie est affiché. En cas d'erreur lors de la suppression, un message d'erreur
+        est affiche, fournissant des informations sur la nature de l'erreur.
         Args:
             repertoire (str): Le chemin vers le répertoire que vous souhaitez supprimer.
             silencieux (bool, optional): Si True, aucune sortie ne sera affichée (par défaut False).
@@ -569,18 +569,6 @@ class Archiver():
 
 
 
-    # Exemple d'utilisation :
-    #noms = ["/chemin/vers/repertoire1", "/chemin/vers/repertoire2", "/chemin/vers/repertoire3"]
-    #creer_repertoires(*noms)
-
-
-    # Exemple d'utilisation :
-    #nom_fichier = "mon_fichier.txt"
-    #nom_repertoire = "/chemin/vers/le/repertoire"
-    #supprimer_fichier_dans_repertoire(nom_fichier, nom_repertoire)
-
-
-
 
 # reference:
 # https://github.com/sezinata/MANE.git
@@ -622,7 +610,7 @@ def construct_word2vec_pairs(G, view_id, common_nodes, pvalue, qvalue, window_si
     Generer et sauvegarder les pairs de noeud  Word2Vec 
     """
     if output:
-        path = directory #######################"""###################"
+        path = directory #######################""
     list_neigh = []
     G_ = Graph(G, False, pvalue, qvalue)
     G_.preprocess_transition_probs()
@@ -716,7 +704,8 @@ class Graph():
 				walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
 
 		return walks
-#Sampling a new node in the walk can be efficiently done in O(1) time using alias sampling
+
+
 	def get_alias_edge(self, src, dst):
 		'''
 		Get the alias edge setup lists for a given edge.

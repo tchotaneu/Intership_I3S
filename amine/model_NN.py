@@ -6,7 +6,7 @@ from scipy.spatial.distance import squareform, pdist
 import numpy as np
 import matplotlib.pyplot as plt
 from buid_views import DrawCurve as draw
-#from bisect import bisect
+
 
 import networkx as nx
 import os
@@ -60,20 +60,7 @@ class Sae_AI(nn.Module):
         return decoded, encoded
     
 
-   # @staticmethod
-    #def plot_learning_curves(training_losses, validation_losses=None, save_path='sauvegarde/SaeView/graphique_fonction/learnSae.png'):
-    #    plt.plot(range(len(training_losses)), training_losses, label='Training Loss')
-    ##    if validation_losses is not None:
-     #       plt.plot(range(len(validation_losses)), validation_losses, label='Validation Loss', linestyle='dashed')
-     #   plt.xlabel('Epoques')
-     #   plt.ylabel('Loss')
-    #    plt.title('Learning Curves')
-     #   plt.legend()
-     #   
-    #    if save_path is not None:
-     #       plt.savefig(save_path)  # Sauvegarde l'image 
-    #    else:
-    #        plt.show()  
+ 
 
    
 
@@ -362,7 +349,6 @@ class Sae_AI(nn.Module):
                 print(f"Iteration {iteration}, Norme du gradient {np.linalg.norm(grad_Y)}")
         #labelsr = np.reshape(labels, (len(labels), 1))
         #embedding = np.concatenate((labelsr, Y), axis=1)
-        #draw.draw_Single_curve(nombre_iterations,) #(self, y_values=None, title="", x_label="", y_label="", save_file=None)
         
         labelsr= labels.reshape(-1, 1)
         embedding= np.hstack((labelsr,Y))
