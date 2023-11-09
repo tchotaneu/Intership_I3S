@@ -468,8 +468,8 @@ class MultiView(Model):
             '3': "eucludian",
             '4': "produitsalaire"
         }
-        self.parametreNode2vec=[ {'p':0.25,  'q':0.5, 'window_size':10, 'num_walks': 10, 'walk_length': 20, },
-                                 {'p':1.5,  'q':0.5, 'window_size':10, 'num_walks': 20, 'walk_length': 25, },
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 100, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 50, },
                                 ]  
         
     def get_most_similar(self, elt: str, number: int):
@@ -616,10 +616,7 @@ class MultiView(Model):
         else:
             print(f"Le choix du constructeur de graphe '{choice}' n'est pas valide.")
        
-        if self.output:
-            a=self.savedirectory+"/dataset/Vue"
-            self.builGrap.save_graph(G, a+'1.txt')
-            self.builGrap.save_graph(self.G, a+'2.txt')
+       
         ###############################################
         for node in G.nodes():
                 for nbr in sorted(G.neighbors(node)):
@@ -632,6 +629,11 @@ class MultiView(Model):
                         self.G.nodes[node]["weight"] - self.G.nodes[nbr]["weight"]
                     )
         ##############################################
+        if self.output:
+            a=self.savedirectory+"/dataset/Vue"
+            self.builGrap.save_graph(G, a+'1.txt')
+            self.builGrap.save_graph(self.G, a+'2.txt')
+        ##############################################""
         Y,self.model =self.compute_embedding(G,self.G) 
         self.drawCurve.draw_Single_curve(y_values=Y,
                                               title="courbe progression de l'apprentissage  ", 
@@ -732,7 +734,7 @@ class ManeView(MultiView):
                 multinomial_nodes_idx = self.degree_nodes_common_nodes(G, common_nodes, node2idx)
 
                 embed_freq = Variable(torch.Tensor(multinomial_nodes_idx))
-
+                
                 modelMane = model_NN.ManeAI(self.nviews, self.dimensions, self.device, len(common_nodes), embed_freq, self.batch_size)
                 modelMane.to(device)
 

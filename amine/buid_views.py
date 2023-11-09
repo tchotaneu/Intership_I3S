@@ -9,6 +9,7 @@ import zipfile
 import shutil
 import csv
 from typing import Dict
+from dimension_reduction import node2vec
 
 class DrawCurve():
 
@@ -612,7 +613,9 @@ def construct_word2vec_pairs(G, view_id, common_nodes, pvalue, qvalue, window_si
     if output:
         path = directory #######################""
     list_neigh = []
-    G_ = Graph(G, False, pvalue, qvalue)
+    #graph = node2vec.Graph
+    #G_ = Graph(G, False, pvalue, qvalue)
+    G_ = node2vec.Graph(G, False, pvalue, qvalue)
     G_.preprocess_transition_probs()
     start_time = time.time()
     walks = G_.simulate_walks(n_walk,
