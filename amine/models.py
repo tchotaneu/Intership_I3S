@@ -593,7 +593,22 @@ class MultiView(Model):
         print("nombre des noeuds de P_valeurs (0.05) connectée dans le graphe ", len(liste_des_noeudsconnecte005),set(liste_des_noeudsconnecte005) & valuetrue, len(set(liste_des_noeudsconnecte005) & valuetrue))
         list_noeuds_connete =self.builGrap.connected_low_nodes(G)
         print("nombre des noeuds connectes dans le graphe de P_valeurs (0.05) connectee", len(list_noeuds_connete), list_noeuds_connete & valuetrue, len(list_noeuds_connete & valuetrue))
+        ## affiche le degre maximal du graphe 
+        max_degree = max(dict(G.degree()).values())
+        print("Degré maximal du graphe :", max_degree)
+        # Calculez et affichez les degrés de chaque nœud dans l'ensemble
+        for node in valuetrue:
+            degree = G.degree(node)
+            weight = G.nodes[node].get("weight", None)
+            # Obtenez la liste des voisins du nœud
+            neighbors = set(G.neighbors(node))
+            # Obtenez l'intersection des voisins avec l'ensemble donné
+            intersection_with_set = neighbors.intersection(valuetrue)
+             # Affichez les informations
+            print(f"Nœud {node} : Degré = {degree}, Poids = {weight}, Voisins = {neighbors}, Intersection avec l'ensemble = {intersection_with_set}")
+           # print(f"Nœud {node} : Degré = {degree}, Poids = {weight}")
 
+        #############################################""
         if choice in self.choiceOfConstructGraph:
             graph_builder_func = self.choiceOfConstructGraph[choice]
             self.G = graph_builder_func(G,p_valeur,no_singleton)
@@ -605,7 +620,18 @@ class MultiView(Model):
             a=self.savedirectory+"/dataset/Vue"
             self.builGrap.save_graph(G, a+'1.txt')
             self.builGrap.save_graph(self.G, a+'2.txt')
-
+        ###############################################
+        for node in G.nodes():
+                for nbr in sorted(G.neighbors(node)):
+                    G[node][nbr]["weight"] = 1 - abs(
+                        G.nodes[node]["weight"] - G.nodes[nbr]["weight"]
+                    )
+        for node in self.G.nodes():
+                for nbr in sorted(self.G.neighbors(node)):
+                    self.G[node][nbr]["weight"] = 1 - abs(
+                        self.G.nodes[node]["weight"] - self.G.nodes[nbr]["weight"]
+                    )
+        ##############################################
         Y,self.model =self.compute_embedding(G,self.G) 
         self.drawCurve.draw_Single_curve(y_values=Y,
                                               title="courbe progression de l'apprentissage  ", 

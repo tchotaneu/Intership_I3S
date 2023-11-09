@@ -344,10 +344,10 @@ class GraphBuilder():
                 parts = line.split()
                 if mode == 'nodes':
                     _, node, weight = parts
-                    G_reconstructed.add_node(node, weight=int(weight))
+                    G_reconstructed.add_node(node, weight=float(weight))
                 elif mode == 'edges':
                     _, u, v, weight = parts
-                    G_reconstructed.add_edge(u, v, weight=int(weight))
+                    G_reconstructed.add_edge(u, v, weight=float(weight))
         return G_reconstructed
     
     def save_graph(self,G: nx.Graph, filename: str):
@@ -726,6 +726,10 @@ class Graph():
 		normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 
 		return alias_setup(normalized_probs)
+#######
+
+  
+######
 
 	def preprocess_transition_probs(self):
 		'''
@@ -736,7 +740,8 @@ class Graph():
 
 		alias_nodes = {}
 		for node in G.nodes():
-			unnormalized_probs = [1 for nbr in sorted(G.neighbors(node))] #1 modified
+            #unnormalized_probs = [G.degree(nbr) for nbr in sorted(G.neighbors(node))]   
+			unnormalized_probs = [G.degree(nbr) for nbr in sorted(G.neighbors(node))] #1 modified
 			norm_const = sum(unnormalized_probs)
 			normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 			alias_nodes[node] = alias_setup(normalized_probs)
@@ -756,7 +761,7 @@ class Graph():
 		self.alias_edges = alias_edges
 
 		return
-
+#########
 
 def alias_setup(probs):
 	'''

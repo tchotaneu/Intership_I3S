@@ -607,15 +607,8 @@ class Datasets:
         return Datasets.init_graph(G, edge_weight=None, default_groups="truehit")
 
     @staticmethod
-    def get_scale_free_graph(
-        nb_nodes: int,
-        nb_initial_nodes: int,
-        nb_modules: int,
-        module_size: int,
-        p_prob: float,
-        q_prob: float,
-        rng_seed: int = None,
-    ) -> nx.Graph:
+    def get_scale_free_graph(        nb_nodes: int,        nb_initial_nodes: int,        nb_modules: int,        module_size: int,        p_prob: float,        q_prob: float,
+        rng_seed: int = None,    ) -> nx.Graph:
         """
         Get a scale free graph based on the extended_barabasi_albert_graph.
 

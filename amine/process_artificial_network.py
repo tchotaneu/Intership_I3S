@@ -23,7 +23,7 @@ import argparse
 import statistics
 import time
 from random import Random
-import sys # 
+import sys 
 import os
 import numpy as np
 #importation des fichiers Models 
@@ -34,6 +34,7 @@ from datasets import Datasets
 from module_detection import ModuleDetection
 from scores import Scores
 from buid_views import Archiver
+from buid_views import GraphBuilder
 import zipfile
 
 def parse_arguments():
@@ -244,13 +245,13 @@ if __name__ == "__main__":
     arch.delete_file_ifexist(file_resultat,reptoire_resultat)
     arch.delete_file_ifexist(file_zip,reptoire_zip)
     
-    print("la racine est ",save)
+    #print("la racine est ",save)
 
 
     """ 
     +-------------------------------------------------------------------------------------+
     We could use : 
-     ---------> Node2vec() model with    --my_model Amine
+     ---------> Node2vec() model with    --my_model Amine     -me {cosinus,eucludian,pearson}  -graphe {1,2,3,4}
      ---------> ManeView() model  with   --my_model ManeView  -me {cosinus,eucludian,pearson}  -graphe {1,2,3,4} 
      ---------> SaeView() model  with    --my_model SaeView   -me {cosinus,eucludian,pearson}  -graphe {1,2}  --no_sing True  # le calcul est trop important lorsque la deuxieme vue n'a pas de donné manquant .
      ---------> Dbscan()  model  with    --my_model Dbscan    -me{cosinus,eucludian}  --embedding {ManeView ,SaeView }  -graphe {1,2,3,4,5,6,7} --pipeline {False ,True } 
@@ -260,8 +261,9 @@ if __name__ == "__main__":
     Entry point for the processing of real networks.
     """  
     # pour charger modele 
-
     
+
+    ##########""
     # Use aggregation zscore as fitness function.
     fitness_fun = lambda the_graph, clus: Scores.aggregation_from_pvalue(
         the_graph, clus, "weight"
@@ -271,40 +273,46 @@ if __name__ == "__main__":
     P_PROB = 0.09
     Q_PROB = 0.70
     NB_INITIAL_NODES = 3
-
+    stockage=False
     f1_scores = []
     if arg.outfile:
         outfile = open(arg.outfile, "w")
         outfile.write("#graph,time(s),nb found,real size,true hits,pvalue\n")
     for ctr in range(arg.number_of_runs):
-        
-        if arg.graph_generation == "guyondata":
-            G = Datasets.get_guyon_graph(ctr + 1)
-        elif arg.graph_generation == "gencat":
-            G = Datasets.get_gencat_graph(
-                arg.network_size,
-                arg.network_size * 16,
-                arg.nb_modules,
-                arg.nb_modules * [arg.module_size],
-                ctr,
-            )
-        else:
-            G = Datasets.get_scale_free_graph(
-                arg.network_size,
-                NB_INITIAL_NODES,
-                arg.nb_modules,
-                arg.module_size,
-                P_PROB,
-                Q_PROB,
-                ctr,
-            )
-            if arg.removed_edges > 0:
-                nbtoremove = int(G.number_of_edges() * arg.removed_edges)
-                rng = Random(ctr)
-                edges_to_remove = rng.sample(G.edges, nbtoremove)
-                G.remove_edges_from(edges_to_remove)
-                G.graph["nb_edges"] = G.number_of_edges()
-
+        if stockage:
+            builG=GraphBuilder()
+            my_path="ManeView_cos/ManeView_cos_size_10_gra_1/dataset/Vue1.txt"
+            G=builG.load_graph(my_path)#lecture du graphe
+            G.graph["nb_nodes"]=1000
+           # {230, 487, 136, 585, 10, 363, 904, 210, 212, 702}
+        else :
+            if arg.graph_generation == "guyondata":
+                G = Datasets.get_guyon_graph(ctr + 1)
+            elif arg.graph_generation == "gencat":
+                G = Datasets.get_gencat_graph(
+                    arg.network_size,
+                    arg.network_size * 16,
+                    arg.nb_modules,
+                    arg.nb_modules * [arg.module_size],
+                    ctr,
+                )
+            else:
+                G = Datasets.get_scale_free_graph(
+                    arg.network_size,
+                    NB_INITIAL_NODES,
+                    arg.nb_modules,
+                    arg.module_size,
+                    P_PROB,
+                    Q_PROB,
+                    ctr,
+                )
+                if arg.removed_edges > 0:
+                    nbtoremove = int(G.number_of_edges() * arg.removed_edges)
+                    rng = Random(ctr)
+                    edges_to_remove = rng.sample(G.edges, nbtoremove)
+                    G.remove_edges_from(edges_to_remove)
+                    G.graph["nb_edges"] = G.number_of_edges()
+       
         # initialize the model
         if arg.verbose:
             print("****************")
@@ -315,6 +323,7 @@ if __name__ == "__main__":
             model.init(G,save_dire=save)
         elif arg.my_model == 'ManeView':
             model = models.ManeView()
+            #defautgroup ={1:{230, 487, 136, 585, 10, 363, 904, 210, 212, 702}}
             model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G),savedirec=save)
         elif arg.my_model == 'SaeView':
             model = models.SaeView()
@@ -325,7 +334,8 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"Modèle inconnu: {arg.my_model}")
        # model.init(G)
-
+       # print(arg.graph_generation)
+        #sys.exit()
         # call module detection method
         start_time = time.perf_counter()
         if not isinstance(model, models.DbscanView):
@@ -346,7 +356,7 @@ if __name__ == "__main__":
         pvalue = 0
         if results:
             pvalue = results[0][2]
-        truehits = Datasets.get_groups(G)
+        truehits =Datasets.get_groups(G)
         if arg.verbose:
             print("truehits", truehits)
         pred = set()
