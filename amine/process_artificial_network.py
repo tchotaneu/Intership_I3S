@@ -176,7 +176,7 @@ def parse_arguments():
         '--constructGraph', 
         dest="graphe",
         type=str, 
-        choices=['1', '2', '3','4','5','6','7'],
+        choices=['1', '2', '3','4','5','6','7','8'],
         required=False, 
         help='La contruction de la deuxieme vue '
         )

@@ -461,6 +461,7 @@ class MultiView(Model):
             '5': self.builGrap.construct_graph5,
             '6': self.builGrap.construct_graph6,
             '7': self.builGrap.construct_graph7,
+            '8': self.builGrap.construct_graph8,
         }
         self.choice_metrique= {
             '1': "cosinus",
@@ -469,7 +470,7 @@ class MultiView(Model):
             '4': "produitsalaire"
         }
         self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 100, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 50, },
+                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 50, },
                                 ]  
         
     def get_most_similar(self, elt: str, number: int):
@@ -586,18 +587,19 @@ class MultiView(Model):
         valuetrue = my_dict[1]
 
         list_noeuds_isole=self.builGrap.isolated_low_nodes(G)
-        print("nombre des noeuds de P_valeurs (0.05) isolée", len(list_noeuds_isole), list_noeuds_isole & valuetrue,len(list_noeuds_isole & valuetrue))
+        print(" noeuds de P_valeurs (0.05) non connecté a un noeud de pvaleur (0.05)", len(list_noeuds_isole),"noeud du true_hit present:", list_noeuds_isole & valuetrue,"longueur:",len(list_noeuds_isole & valuetrue))
         list_noeuds_totale=self.builGrap.low_nodes(G)
-        print("nombre des noeuds de P_valeurs (0.05)  total dans le graphe  ", len(list_noeuds_totale),list_noeuds_totale & valuetrue,len(list_noeuds_totale & valuetrue))
+        print("noeuds de P_valeurs (0.05)  total dans le graphe  ", len(list_noeuds_totale),"noeud present dans le true_hit:",list_noeuds_totale & valuetrue,"longueur: ",len(list_noeuds_totale & valuetrue))
         liste_des_noeudsconnecte005=self.builGrap.get_low_pvalue_nodes_with_low_pvalue_neighbors(G)
-        print("nombre des noeuds de P_valeurs (0.05) connectée dans le graphe ", len(liste_des_noeudsconnecte005),set(liste_des_noeudsconnecte005) & valuetrue, len(set(liste_des_noeudsconnecte005) & valuetrue))
+        print("noeuds de P_valeurs (0.05) connectée avec les p_value(0.05) : ", len(liste_des_noeudsconnecte005),"noeud du true_hit present:",set(liste_des_noeudsconnecte005) & valuetrue, "longueur: ",len(set(liste_des_noeudsconnecte005) & valuetrue))
         list_noeuds_connete =self.builGrap.connected_low_nodes(G)
-        print("nombre des noeuds connectes dans le graphe de P_valeurs (0.05) connectee", len(list_noeuds_connete), list_noeuds_connete & valuetrue, len(list_noeuds_connete & valuetrue))
+        print("nombre des noeuds connectes avec le noeuds de P_valeurs (0.05) ", len(list_noeuds_connete),"noeud du true_hit present:", list_noeuds_connete & valuetrue,"longueur: ", len(list_noeuds_connete & valuetrue))
         ## affiche le degre maximal du graphe 
         max_degree = max(dict(G.degree()).values())
         print("Degré maximal du graphe :", max_degree)
+        
         # Calculez et affichez les degrés de chaque nœud dans l'ensemble
-        for node in valuetrue:
+        ''' for node in valuetrue:
             degree = G.degree(node)
             weight = G.nodes[node].get("weight", None)
             # Obtenez la liste des voisins du nœud
@@ -607,12 +609,12 @@ class MultiView(Model):
              # Affichez les informations
             print(f"Nœud {node} : Degré = {degree}, Poids = {weight}, Voisins = {neighbors}, Intersection avec l'ensemble = {intersection_with_set}")
            # print(f"Nœud {node} : Degré = {degree}, Poids = {weight}")
-
+        '''
         #############################################""
         if choice in self.choiceOfConstructGraph:
             graph_builder_func = self.choiceOfConstructGraph[choice]
             self.G = graph_builder_func(G,p_valeur,no_singleton)
-            self.choice=choice
+           # self.choice=choice
         else:
             print(f"Le choix du constructeur de graphe '{choice}' n'est pas valide.")
        
@@ -628,12 +630,13 @@ class MultiView(Model):
                     self.G[node][nbr]["weight"] = 1 - abs(
                         self.G.nodes[node]["weight"] - self.G.nodes[nbr]["weight"]
                     )
+                    
         ##############################################
         if self.output:
             a=self.savedirectory+"/dataset/Vue"
             self.builGrap.save_graph(G, a+'1.txt')
             self.builGrap.save_graph(self.G, a+'2.txt')
-        ##############################################""
+        ##############################################
         Y,self.model =self.compute_embedding(G,self.G) 
         self.drawCurve.draw_Single_curve(y_values=Y,
                                               title="courbe progression de l'apprentissage  ", 
@@ -660,37 +663,41 @@ class ManeView(MultiView):
     def __init__(self):
       super().__init__()
       self.batch_size=500
-      self.dimensions=48
-      self.learning_rate=0.001
+      self.dimensions=64
+      self.learning_rate=0.002
       self.epochs=10 #default 10   
       self.alpha=1.0
-      self.beta= 1.0 #1.0
-      self.negative_sampling=10.0   
+      self.beta= 0.4 #1.0
+      self.negative_sampling=5.0  
+      self.common_pair_nodes_views=None
     
-    def choice_bach_size(self,input_value):
-        if input_value == '1':
-            return 300
-        elif input_value == '2':
+    def choice_bach_size(self, input_value):
+        if input_value <= 30000:
+            return 100
+        elif 30000 < input_value <= 40000:
+            return 150
+        elif 40000 < input_value <= 60000:
+            return 250
+        elif 60000 < input_value <= 100000:
+            return 350
+        elif 100000 < input_value <= 200000:
+            return 500
+        elif 200000 < input_value <= 350000:
             return 700
-        elif input_value == '3':
-            return 8500
-        elif input_value == '4':
-            return 1300
-        elif input_value == '5':
-            return 10000
-        elif input_value == '6':
-            return 15000
-        elif input_value == '7':
-            return 2000
+        elif 350000 < input_value <= 550000:
+            return 1000
+        elif 500000 < input_value <= 1000000:
+            return 1500
         else:
-            return 0  
+            return 0
+
 
 
     def compute_embedding(self,G1,G2):
                 """
                 Initialisation  parametres  et entrainement du model
                 """
-                self.batch_size=self.choice_bach_size(self.choice)
+                
                 G=[G1,G2]
                 values_lossFunction=[] 
                 if torch.cuda.is_available() and not self.cuda:
@@ -744,6 +751,12 @@ class ManeView(MultiView):
                     if min_pair_length > nodes_idx_nets[n_net].size:
                         min_pair_length = nodes_idx_nets[n_net].size
                 print("Le nombre total de paire de noeuds : ", min_pair_length)
+                # calcul de la taille du bacth_size
+                self.common_pair_nodes_views =min_pair_length
+                self.batch_size=self.choice_bach_size(self.common_pair_nodes_views )
+                print("la taille du bacth est : ", self.batch_size)
+                # ##############""""""""""""""""
+
                 print("Debut de l'entrainement! \n")
                 start_init = time.time()
                 while epo <= self.epochs - 1:

@@ -100,30 +100,36 @@ class GraphBuilder():
     """
     Classe pour construire différents types de graphes basés sur un graphe d'origine.
     """
-    def construct_graph9(self, G: nx.Graph, p_value: float = 0.05) -> nx.Graph:
-        """
-        Construit un nouveau graphe basé sur le graphe d'origine G, en extrayant les composantes connexes
-        des nœuds avec un poids inférieur à p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-    
-        # Créer un nouveau graphe
+    def construct_graph8(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
         G_prime = nx.Graph()
+        G_prime.add_nodes_from(G.nodes(data=True))
 
-        # Parcourir toutes les arêtes dans G et les ajouter à G_prime si les deux nœuds ont une p_value <= p_value
         for u, v, data in G.edges(data=True):
             u_data = G.nodes[u]["weight"]
             v_data = G.nodes[v]["weight"]
-            
+
             if u_data <= p_value and v_data <= p_value:
                 G_prime.add_edge(u, v, **data)
-                G_prime.nodes[u]["weight"] = u_data
-                G_prime.nodes[v]["weight"] = v_data
+            elif u_data <= p_value and v_data > p_value:
+                # Check neighbors of u
+                u_neighbors = set(G.neighbors(u))
+                u_low_p_neighbors = [n for n in u_neighbors if G.nodes[n]["weight"] <= p_value]
 
-            return G_prime
+                # Check neighbors of v
+                v_neighbors = set(G.neighbors(v))
+                v_low_p_neighbors = [n for n in v_neighbors if G.nodes[n]["weight"] <= p_value]
+
+                # Add the edge if u has no low p-value neighbors and v has at least one low p-value neighbor
+                if not u_low_p_neighbors and v_low_p_neighbors:
+                    G_prime.add_edge(u, v, **data)
+
+        if no_singletons:
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+
+        return G_prime
+
+
 
     def construct_graph1(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
         """

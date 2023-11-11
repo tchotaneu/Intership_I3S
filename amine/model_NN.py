@@ -379,29 +379,38 @@ class ManeAI(nn.Module):
        
 
     def forward(self, count, shuffle_indices_nets, nodes_idx_nets, neigh_idx_nets, hyp1, hyp2):
-        cost1 = [nn.functional.logsigmoid (  torch.bmm(self.neigh_embeddings[i](Variable(torch.LongTensor(
-            neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
-            2).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-            self.embedding_dim), self.node_embeddings[i](Variable(
-            torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                self.device))).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(
-            2))).squeeze().mean() + nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[i](
-            self.embed_freq.multinomial(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]) * self.neigh_embeddings[i](Variable(
-                    torch.LongTensor(
-                        neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                        self.device))).unsqueeze(
-                    2).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                            self.embedding_dim).size(1) * self.negative_sampling_size, replacement=True).to(
-                self.device)).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-            self.embedding_dim).neg(), self.node_embeddings[i](Variable(
-            torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                self.device))).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(0) for
-                 i in range(self.num_net)]
+        
+        try:
+            cost1 = [nn.functional.logsigmoid (  torch.bmm(self.neigh_embeddings[i](Variable(torch.LongTensor(
+                neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
+                2).view(
+                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
+                self.embedding_dim), self.node_embeddings[i](Variable(
+                torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
+                    self.device))).view(
+                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(
+                2))).squeeze().mean() + nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[i](
+                self.embed_freq.multinomial(
+                    len(shuffle_indices_nets[i][count:count + self.batch_size]) * self.neigh_embeddings[i](Variable(
+                        torch.LongTensor(
+                            neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
+                            self.device))).unsqueeze(
+                        2).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
+                                self.embedding_dim).size(1) * self.negative_sampling_size, replacement=True).to(
+                    self.device)).view(
+                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
+                self.embedding_dim).neg(), self.node_embeddings[i](Variable(
+                torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
+                    self.device))).view(
+                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(0) for
+                    i in range(self.num_net)]
+        except IndexError:
+            # Afficher les dimensions uniquement lorsque l'erreur se produit
+            print(f"self.num_net: {self.num_net}")
+            for i in range(self.num_net):
+                print(f"neigh_embeddings[{i}] dimensions: {self.neigh_embeddings[i].weight.size()}")
+                print(f"node_embeddings[{i}] dimensions: {self.node_embeddings[i].weight.size()}")
+            raise  # Relève l'exception pour afficher le traceback 
 
         # First order collaboration
         cost2 = [[hyp1 * (nn.functional.logsigmoid(torch.bmm(self.node_embeddings[j](Variable(torch.LongTensor(
