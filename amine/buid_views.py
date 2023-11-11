@@ -111,15 +111,15 @@ class GraphBuilder():
             if u_data <= p_value and v_data <= p_value:
                 G_prime.add_edge(u, v, **data)
             elif u_data <= p_value and v_data > p_value:
-                # Check neighbors of u
+                # observons les voisins  du noeud U s'il est connecte à un noeud de pvalue inferieur à 0.05
                 u_neighbors = set(G.neighbors(u))
                 u_low_p_neighbors = [n for n in u_neighbors if G.nodes[n]["weight"] <= p_value]
 
-                # Check neighbors of v
+                # observons les voisins du noeud V s'il est connecte à un noeud de pvalue inferieur à 0.05
                 v_neighbors = set(G.neighbors(v))
                 v_low_p_neighbors = [n for n in v_neighbors if G.nodes[n]["weight"] <= p_value]
 
-                # Add the edge if u has no low p-value neighbors and v has at least one low p-value neighbor
+                # ajoutons l'arrete si U n'a pas de voisin avec une pvalue inferieur à 0.05 et que V est au moins connecté à un noeud de p-value inferieur à 0.05
                 if not u_low_p_neighbors and v_low_p_neighbors:
                     G_prime.add_edge(u, v, **data)
 

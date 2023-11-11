@@ -587,9 +587,9 @@ class MultiView(Model):
         valuetrue = my_dict[1]
 
         list_noeuds_isole=self.builGrap.isolated_low_nodes(G)
-        print(" noeuds de P_valeurs (0.05) non connecté a un noeud de pvaleur (0.05)", len(list_noeuds_isole),"noeud du true_hit present:", list_noeuds_isole & valuetrue,"longueur:",len(list_noeuds_isole & valuetrue))
+        print("noeuds de P_valeurs (0.05) non connecté a un noeud de pvaleur (0.05)", len(list_noeuds_isole),"noeud du true_hit present:", list_noeuds_isole & valuetrue,"longueur:",len(list_noeuds_isole & valuetrue))
         list_noeuds_totale=self.builGrap.low_nodes(G)
-        print("noeuds de P_valeurs (0.05)  total dans le graphe  ", len(list_noeuds_totale),"noeud present dans le true_hit:",list_noeuds_totale & valuetrue,"longueur: ",len(list_noeuds_totale & valuetrue))
+        print("noeuds de P_valeurs (0.05) total dans le graphe  ", len(list_noeuds_totale),"noeud present dans le true_hit:",list_noeuds_totale & valuetrue,"longueur: ",len(list_noeuds_totale & valuetrue))
         liste_des_noeudsconnecte005=self.builGrap.get_low_pvalue_nodes_with_low_pvalue_neighbors(G)
         print("noeuds de P_valeurs (0.05) connectée avec les p_value(0.05) : ", len(liste_des_noeudsconnecte005),"noeud du true_hit present:",set(liste_des_noeudsconnecte005) & valuetrue, "longueur: ",len(set(liste_des_noeudsconnecte005) & valuetrue))
         list_noeuds_connete =self.builGrap.connected_low_nodes(G)
