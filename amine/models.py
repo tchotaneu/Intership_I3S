@@ -594,9 +594,18 @@ class MultiView(Model):
         print("noeuds de P_valeurs (0.05) connectée avec les p_value(0.05) : ", len(liste_des_noeudsconnecte005),"noeud du true_hit present:",set(liste_des_noeudsconnecte005) & valuetrue, "longueur: ",len(set(liste_des_noeudsconnecte005) & valuetrue))
         list_noeuds_connete =self.builGrap.connected_low_nodes(G)
         print("nombre des noeuds connectes avec le noeuds de P_valeurs (0.05) ", len(list_noeuds_connete),"noeud du true_hit present:", list_noeuds_connete & valuetrue,"longueur: ", len(list_noeuds_connete & valuetrue))
+        list_noeuds_sup005=self.builGrap.get_high_nodes_above_threshold_connected_005(G)
+        print("nombre des noeuds sup 0.05 connectes avec moins (0.05) ", len(list_noeuds_sup005),"noeud du true_hit present:", list_noeuds_sup005 & valuetrue,"longueur: ", len(list_noeuds_sup005 & valuetrue))
+       # A=list_noeuds_sup005 & valuetrue
+
+        #self.builGrap.print_neighbors_with_pvalues(G,A)
+        
+       # abc=self.builGrap.getNoeuds(G) 
+
+        #print("nombre des noeuds  ", len(abc),"noeud du true_hit present:", abc & valuetrue,"longueur: ", len(abc & valuetrue))
         ## affiche le degre maximal du graphe 
-        max_degree = max(dict(G.degree()).values())
-        print("Degré maximal du graphe :", max_degree)
+        #max_degree = max(dict(G.degree()).values())
+        #print("Degré maximal du graphe :", max_degree)
         
         # Calculez et affichez les degrés de chaque nœud dans l'ensemble
         ''' for node in valuetrue:
@@ -620,7 +629,7 @@ class MultiView(Model):
        
        
         ###############################################
-        for node in G.nodes():
+        '''for node in G.nodes():
                 for nbr in sorted(G.neighbors(node)):
                     G[node][nbr]["weight"] = 1 - abs(
                         G.nodes[node]["weight"] - G.nodes[nbr]["weight"]
@@ -629,7 +638,8 @@ class MultiView(Model):
                 for nbr in sorted(self.G.neighbors(node)):
                     self.G[node][nbr]["weight"] = 1 - abs(
                         self.G.nodes[node]["weight"] - self.G.nodes[nbr]["weight"]
-                    )
+                  )
+                  '''
                     
         ##############################################
         if self.output:
@@ -667,7 +677,7 @@ class ManeView(MultiView):
       self.learning_rate=0.002
       self.epochs=10 #default 10   
       self.alpha=1.0
-      self.beta= 0.4 #1.0
+      self.beta= 1.0 #1.0
       self.negative_sampling=5.0  
       self.common_pair_nodes_views=None
     
