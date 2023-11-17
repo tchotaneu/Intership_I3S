@@ -54,6 +54,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
 from scipy.stats import pearsonr
+from buid_views  import GraphFilter
 #from node2vec import Node2Vec # appelle de node2vec de mane 
 
 class Model(ABC):
@@ -156,11 +157,8 @@ class Node2vec(Model):
                 ).todense(),
                 dtype=np.float_,
             )
-            # isolated_nodes = np.where(~A.any(axis=1))[0]
-            # print(np.where(~A.any(axis=0))[0])
-            # print(nx.is_connected(G))
-            # A = np.delete(A, isolated_nodes, axis=0)
-            # A = np.delete(A, isolated_nodes, axis=1)
+      
+    
             graph.from_mat(A, sorted(G.nodes))
             walks = graph.simulate_walks(
                 num_walks=self.num_walks,
@@ -176,12 +174,7 @@ class Node2vec(Model):
 
         # Learn embeddings by optimizing the Skipgram objective using SGD.
         walks = [list(map(str, walk)) for walk in walks]
-        # import pickle
-        # with open("/home/cpasquie/Téléchargements/test.txt", "wb") as fp:   #Pickling
-        #     pickle.dump(walks, fp)
-        # dd
-        # with open("/home/cpasquie/Téléchargements/test.txt", "rb") as fp:   # Unpickling
-        #     walks = pickle.load(fp)
+      
         use_fasttext = False
         if use_fasttext:
             self.model = FastText(
@@ -453,25 +446,11 @@ class MultiView(Model):
         self.choice=None
         self.builGrap=buid_views.GraphBuilder() 
         self.drawCurve=buid_views.DrawCurve() 
-        self.choiceOfConstructGraph= {
-            '1': self.builGrap.construct_graph1,
-            '2': self.builGrap.construct_graph2,
-            '3': self.builGrap.construct_graph3,
-            '4': self.builGrap.construct_graph4,
-            '5': self.builGrap.construct_graph5,
-            '6': self.builGrap.construct_graph6,
-            '7': self.builGrap.construct_graph7,
-            '8': self.builGrap.construct_graph8,
-        }
-        self.choice_metrique= {
-            '1': "cosinus",
-            '2': "pearson",
-            '3': "eucludian",
-            '4': "produitsalaire"
-        }
+        self.choiceOfConstructGraph= { '1': self.builGrap.construct_graph1, '2': self.builGrap.construct_graph2,'3': self.builGrap.construct_graph3,'4': self.builGrap.construct_graph4,
+                                      '5': self.builGrap.construct_graph5, '6': self.builGrap.construct_graph5, '7': self.builGrap.construct_graph5,'8': self.builGrap.construct_graph8, }
+        self.choice_metrique= {'1': "cosinus",'2': "pearson", '3': "eucludian",  }
         self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 100, },
-                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 50, },
-                                ]  
+                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 50, }, ]  
         
     def get_most_similar(self, elt: str, number: int):
         """
@@ -492,133 +471,108 @@ class MultiView(Model):
         vectors = self.model[:, 1:]
         # choix de la metrique 
         if self.metrique=="cosinus":
-            indices_similaires = self.find_similar_cosine(vectors , reference_vector)
+            indices_similaires = self.use_similar_cosine(vectors , reference_vector)
         elif self.metrique=="pearson":
-            indices_similaires=self.find_similar_pearson(vectors , reference_vector)
+            indices_similaires=self.use_similar_pearson(vectors , reference_vector)
         elif self.metrique=="eucludian":
-            indices_similaires=self.find_similar_euclidean(vectors , reference_vector)
+            indices_similaires=self.use_similar_euclidean(vectors , reference_vector)
         else :
             print("metrique non defini ")
         labels_similaires = labels_vectors [indices_similaires]
         
         return list(map(int, labels_similaires.tolist()))
     
-    def find_similar_cosine(self, vectors, reference_vector):
-        
-        # Calculer la similarité cosinus une seule fois entre le vecteur de référence et tous les vecteurs
-        similarities = cosine_similarity([reference_vector], vectors).flatten()
-        #normalized_embeddings= self.model[:, 1:] / np.linalg.norm(self.model[:, 1:], axis=1, keepdims=True)
 
+    def use_similar_cosine(self, vectors, reference_vector):
+        """
+        Trouve les vecteurs les plus similaires au vecteur de référence en utilisant la similarité cosinus.
+
+        :param vectors: Tableau de vecteurs à comparer.
+        :type vectors: np.ndarray
+        :param reference_vector: Vecteur de référence pour la comparaison.
+        :type reference_vector: np.ndarray
+        :return: Les indices des vecteurs dans l'ordre décroissant de similarité cosinus par rapport au vecteur de référence.
+        :rtype: np.ndarray
+        """
+        # Normaliser le vecteur de référence
+        reference_vector = reference_vector / np.linalg.norm(reference_vector)
+        # Normaliser tous les vecteurs dans le tableau
+        vectors = vectors / np.linalg.norm(vectors, axis=1, keepdims=True)
+        # Calculer la similarité cosinus entre le vecteur de référence et tous les vecteurs
+        similarities = cosine_similarity([reference_vector], vectors).flatten()
         # Trier les indices des vecteurs en fonction de leur similarité cosinus (en ordre décroissant)
         similar_indices = np.argsort(similarities)[::-1]
 
         return similar_indices
 
-    def find_similar_pearson(self, vectors, reference_vector):
-        """
-        
-        """
 
-        # Calculer la corrélation une seule fois entre le vecteur de référence et tous les vecteurs
+    def use_similar_pearson(self, vectors, reference_vector):
+        """
+        Trouve les vecteurs les plus similaires au vecteur de référence en utilisant la corrélation de Pearson.
+
+        :param vectors: Tableau de vecteurs à comparer.
+        :type vectors: np.ndarray
+        :param reference_vector: Vecteur de référence pour la comparaison.
+        :type reference_vector: np.ndarray
+        :return: Les indices des vecteurs dans l'ordre décroissant de corrélation de Pearson par rapport au vecteur de référence.
+        :rtype: np.ndarray
+        """
+        # Calculer la corrélation de Pearson entre le vecteur de référence et tous les vecteurs
         correlations = np.array([pearsonr(reference_vector, vector)[0] for vector in vectors])
         # Trier les indices des vecteurs en fonction de leur corrélation (en ordre décroissant)
-        similar_indices  = np.argsort(correlations)[::-1]
+        similar_indices = np.argsort(correlations)[::-1]
 
-        return  similar_indices
+        return similar_indices
 
-    def find_similar_euclidean(self, vectors, reference_vector):
-    
-        # Calculer la distance euclidienne une seule fois entre le vecteur de référence et tous les vecteurs
+
+    def use_similar_euclidean(self, vectors, reference_vector):
+        """
+            Trouve les vecteurs les plus similaires au vecteur de référence en utilisant la distance euclidienne.
+
+            :param vectors: Tableau de vecteurs à comparer.
+            :type vectors: np.ndarray
+            :param reference_vector: Vecteur de référence pour la comparaison.
+            :type reference_vector: np.ndarray
+            :return: Les indices des vecteurs dans l'ordre croissant de la distance euclidienne par rapport au vecteur de référence.
+            :rtype: np.ndarray
+        """
+        # Calculer la distance euclidienne entre le vecteur de référence et tous les vecteurs
         distances = np.linalg.norm(vectors - reference_vector, axis=1)
 
         # Trier les indices des vecteurs en fonction de leur distance euclidienne (en ordre croissant)
         similar_indices = np.argsort(distances)
 
         return similar_indices
-
-    
-    def find_similar_pscalaire( self,elt: str, number: int):
-
-    
-        """
-        Renvoie les étiquettes des top_n vecteurs qui ont le produit scalaire le plus élevé avec le vecteur associé à l'étiquette de référence.
-
-        Args:
-        - data (np.array): Tableau où la première colonne contient des étiquettes et les colonnes suivantes contiennent les coordonnées des vecteurs.
-        - elt (str): Étiquette du vecteur de référence.
-        - top_n (int): Nombre d'étiquettes à renvoyer.
-
-        Returns:
-        - list of str: Étiquettes des top_n vecteurs.
-        """
-        # Trouver le vecteur associé à l'étiquette de référence
-        lab=float(elt)
-        #top_n=10
-        data=self.model
-        reference_vector = data[data[:, 0] == lab][0, 1:]
-
-        # Séparation des étiquettes et des vecteurs
-        labels = data[:, 0]
-        vectors = data[:, 1:]
-
-        # Calcul des produits scalaires
-        dot_products = np.dot(vectors, reference_vector)
-
-        # Tri des étiquettes en fonction des produits scalaires et sélection des top_n
-        sorted_indices = np.argsort(dot_products)[::-1]  # Tri décroissant
-        top_labels = list(map(int,labels[sorted_indices].tolist() )) 
-
-        return top_labels
-
+    def info_graphe(self,G: nx.Graph ,valuetrue:None ):
+        filtre=GraphFilter()
+        ################## noeuds de moins  0.05 de pvalue present dans le graphes
+        all_nodes_005=filtre.low_nodes(G)
+        print("noeuds_(0.05) dans le graphe  ", len(all_nodes_005))
+        ################## noeuds de moins  0.05 de pvalue non connecte a 0.05  à un noeud de moins de 0.05
+        node_005_alone=filtre.filter_low_nodes_isole(G)
+        print("noeuds_(0.05) non connecté a un noeud_(0.05):", len(node_005_alone),"noeuds du true_hit present:", node_005_alone & valuetrue,"longueur:",len(node_005_alone & valuetrue))
+        ################## noeuds de moins  0.05 de pvalue  connecte a 0.05  à un noeud de moins de 0.05
+        node_005_connecte=filtre.low_node_connecte(G)
+        print("noeuds_(0.05) connectée avec les p_value(0.05):", len(node_005_connecte),"noeud du true_hit present:",node_005_connecte & valuetrue, "longueur: ", len((node_005_connecte& valuetrue)))
+        ################## noeuds  connecte a 0.05  à un noeud de moins de 0.05
+        node_connecte=filtre.connected_low_nodes(G)
+        print("noeuds connectes avec P_valeurs(0.05),", len(node_connecte),"noeud du true_hit present:", node_connecte & valuetrue,"longueur: ", len(node_connecte & valuetrue))
+        ################## noeuds de superieur 0.05 de pvalue  non connecte a 0.05  à un noeud de moins de 0.05
+        node_h005_alone=filtre.filter_high_nodes_isole(G)
+        print("noeuds+(00.5)non connectes avec P_valeurs(0.05):", len(node_h005_alone),"noeud du true_hit present:", node_h005_alone & valuetrue,"longueur: ", len(node_h005_alone & valuetrue))
+        ################## noeuds de sigleton
+        node_h005,node_005=filtre.classify_singleton_nodes(G)
+        print("nombre +005 singleons ", node_h005,"longueur: ", len(node_h005 & valuetrue))
+        print("nombre -005 singleons ", node_005,"longueur: ", len(node_005 & valuetrue))
+       # A=list_noeuds_sup005 & valuetrue
 
    
-    def init(self, G: nx.Graph,
-                  p_valeur:float,
-                  choice:None,
-                  choice_metrique:None,
-                  dossier:None,
-                  no_singleton:None,
-                  my_dict:None,
-                  savedirec:None
-                  ):
+    def init(self, G: nx.Graph, p_valeur:float,choice:None, choice_metrique:None, dossier:None, no_singleton:None, my_dict:None, savedirec:None ):
         self.savedirectory=savedirec
         self.metrique=choice_metrique
         self.directory=dossier
         valuetrue = my_dict[1]
-
-        list_noeuds_isole=self.builGrap.isolated_low_nodes(G)
-        print("noeuds de P_valeurs (0.05) non connecté a un noeud de pvaleur (0.05)", len(list_noeuds_isole),"noeud du true_hit present:", list_noeuds_isole & valuetrue,"longueur:",len(list_noeuds_isole & valuetrue))
-        list_noeuds_totale=self.builGrap.low_nodes(G)
-        print("noeuds de P_valeurs (0.05) total dans le graphe  ", len(list_noeuds_totale),"noeud present dans le true_hit:",list_noeuds_totale & valuetrue,"longueur: ",len(list_noeuds_totale & valuetrue))
-        liste_des_noeudsconnecte005=self.builGrap.get_low_pvalue_nodes_with_low_pvalue_neighbors(G)
-        print("noeuds de P_valeurs (0.05) connectée avec les p_value(0.05) : ", len(liste_des_noeudsconnecte005),"noeud du true_hit present:",set(liste_des_noeudsconnecte005) & valuetrue, "longueur: ",len(set(liste_des_noeudsconnecte005) & valuetrue))
-        list_noeuds_connete =self.builGrap.connected_low_nodes(G)
-        print("nombre des noeuds connectes avec le noeuds de P_valeurs (0.05) ", len(list_noeuds_connete),"noeud du true_hit present:", list_noeuds_connete & valuetrue,"longueur: ", len(list_noeuds_connete & valuetrue))
-        list_noeuds_sup005=self.builGrap.get_high_nodes_above_threshold_connected_005(G)
-        print("nombre des noeuds sup 0.05 connectes avec moins (0.05) ", len(list_noeuds_sup005),"noeud du true_hit present:", list_noeuds_sup005 & valuetrue,"longueur: ", len(list_noeuds_sup005 & valuetrue))
-       # A=list_noeuds_sup005 & valuetrue
-
-        #self.builGrap.print_neighbors_with_pvalues(G,A)
-        
-       # abc=self.builGrap.getNoeuds(G) 
-
-        #print("nombre des noeuds  ", len(abc),"noeud du true_hit present:", abc & valuetrue,"longueur: ", len(abc & valuetrue))
-        ## affiche le degre maximal du graphe 
-        #max_degree = max(dict(G.degree()).values())
-        #print("Degré maximal du graphe :", max_degree)
-        
-        # Calculez et affichez les degrés de chaque nœud dans l'ensemble
-        ''' for node in valuetrue:
-            degree = G.degree(node)
-            weight = G.nodes[node].get("weight", None)
-            # Obtenez la liste des voisins du nœud
-            neighbors = set(G.neighbors(node))
-            # Obtenez l'intersection des voisins avec l'ensemble donné
-            intersection_with_set = neighbors.intersection(valuetrue)
-             # Affichez les informations
-            print(f"Nœud {node} : Degré = {degree}, Poids = {weight}, Voisins = {neighbors}, Intersection avec l'ensemble = {intersection_with_set}")
-           # print(f"Nœud {node} : Degré = {degree}, Poids = {weight}")
-        '''
+        self.info_graphe(G,valuetrue)
         #############################################""
         if choice in self.choiceOfConstructGraph:
             graph_builder_func = self.choiceOfConstructGraph[choice]
@@ -626,21 +580,7 @@ class MultiView(Model):
            # self.choice=choice
         else:
             print(f"Le choix du constructeur de graphe '{choice}' n'est pas valide.")
-       
-       
-        ###############################################
-        '''for node in G.nodes():
-                for nbr in sorted(G.neighbors(node)):
-                    G[node][nbr]["weight"] = 1 - abs(
-                        G.nodes[node]["weight"] - G.nodes[nbr]["weight"]
-                    )
-        for node in self.G.nodes():
-                for nbr in sorted(self.G.neighbors(node)):
-                    self.G[node][nbr]["weight"] = 1 - abs(
-                        self.G.nodes[node]["weight"] - self.G.nodes[nbr]["weight"]
-                  )
-                  '''
-                    
+             
         ##############################################
         if self.output:
             a=self.savedirectory+"/dataset/Vue"
@@ -673,13 +613,14 @@ class ManeView(MultiView):
     def __init__(self):
       super().__init__()
       self.batch_size=500
-      self.dimensions=64
+      self.dimensions=48
       self.learning_rate=0.002
-      self.epochs=10 #default 10   
-      self.alpha=1.0
-      self.beta= 1.0 #1.0
-      self.negative_sampling=5.0  
+      self.epochs=9 #default 10   
+      self.alpha=0.5
+      self.beta= 3.0 #1.0
+      self.negative_sampling=10.0  
       self.common_pair_nodes_views=None
+      self.exposant_attenuation=0.75
     
     def choice_bach_size(self, input_value):
         if input_value <= 30000:
@@ -699,7 +640,7 @@ class ManeView(MultiView):
         elif 500000 < input_value <= 1000000:
             return 1500
         else:
-            return 0
+            return 5000
 
 
 
@@ -719,8 +660,9 @@ class ManeView(MultiView):
                 common_nodes = sorted(set(G[0]).intersection(*G))
                 print('Nombre de noeud commun a toutes les vues: ', len(common_nodes))
                 node2idx = {n: idx for (idx, n) in enumerate(common_nodes)}
+                
                 idx2node = {idx: n for (idx, n) in enumerate(common_nodes)}
-
+                
                 if self.read_pair:
 
                     nodes_idx_nets, neigh_idx_nets = self.read_word2vec_pairs(self.nviews)
@@ -744,17 +686,14 @@ class ManeView(MultiView):
                                                                                         node2idx=node2idx,
                                                                                         directory=self.savedirectory
                                                                                     )
-
+                       
                         nodes_idx_nets.append(nodes_idx)
                         neigh_idx_nets.append(neigh_idx)
 
                 multinomial_nodes_idx = self.degree_nodes_common_nodes(G, common_nodes, node2idx)
+               # print("aaaaaaaaaaa",multinomial_nodes_idx )
 
-                embed_freq = Variable(torch.Tensor(multinomial_nodes_idx))
-                
-                modelMane = model_NN.ManeAI(self.nviews, self.dimensions, self.device, len(common_nodes), embed_freq, self.batch_size)
-                modelMane.to(device)
-
+                embed_freq = torch.Tensor(multinomial_nodes_idx)
                 epo = 0
                 min_pair_length = nodes_idx_nets[0].size
                 for n_net in range(self.nviews):
@@ -765,7 +704,9 @@ class ManeView(MultiView):
                 self.common_pair_nodes_views =min_pair_length
                 self.batch_size=self.choice_bach_size(self.common_pair_nodes_views )
                 print("la taille du bacth est : ", self.batch_size)
-                # ##############""""""""""""""""
+                modelMane = model_NN.ManeAI(self.nviews, self.dimensions, self.device, len(common_nodes), embed_freq, self.batch_size)
+                modelMane.to(device)
+                # ##############"
 
                 print("Debut de l'entrainement! \n")
                 start_init = time.time()
@@ -825,7 +766,7 @@ class ManeView(MultiView):
             for node in common_nodes:
                 degrees_idx[node2idx[node]] = sum([G[n].degree(node) for n in range(len(G))])
             for node in common_nodes:
-                multinomial_nodesidx.append(degrees_idx[node2idx[node]] ** (0.75))
+                multinomial_nodesidx.append(degrees_idx[node2idx[node]] ** (self.exposant_attenuation))
 
             return multinomial_nodesidx
     

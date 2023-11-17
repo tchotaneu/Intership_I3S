@@ -357,7 +357,7 @@ class Sae_AI(nn.Module):
 
 
 # reference:
-# https://github.com/sezinata/MANE.git
+#sezinata/MANE
 
 class ManeAI(nn.Module):  
     
@@ -381,29 +381,43 @@ class ManeAI(nn.Module):
     def forward(self, count, shuffle_indices_nets, nodes_idx_nets, neigh_idx_nets, hyp1, hyp2):
         
         try:
-            cost1 = [nn.functional.logsigmoid (  torch.bmm(self.neigh_embeddings[i](Variable(torch.LongTensor(
-                neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
-                2).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                self.embedding_dim), self.node_embeddings[i](Variable(
-                torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                    self.device))).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(
-                2))).squeeze().mean() + nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[i](
-                self.embed_freq.multinomial(
-                    len(shuffle_indices_nets[i][count:count + self.batch_size]) * self.neigh_embeddings[i](Variable(
-                        torch.LongTensor(
-                            neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                            self.device))).unsqueeze(
-                        2).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                                self.embedding_dim).size(1) * self.negative_sampling_size, replacement=True).to(
-                    self.device)).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                self.embedding_dim).neg(), self.node_embeddings[i](Variable(
-                torch.LongTensor(nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                    self.device))).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(0) for
-                    i in range(self.num_net)]
+            cost1 = []
+            for i in range(self.num_net):
+                slice_size = min(self.batch_size,len(shuffle_indices_nets[i]) - count)
+                neigh_emb = self.neigh_embeddings[i](torch.LongTensor(
+                    neigh_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size ]]
+                ).to(self.device)).unsqueeze(2).view(
+                    len(shuffle_indices_nets[i][count:count + slice_size ]), -1, self.embedding_dim)
+               # print("count", count)
+               # print("slice_size )",slice_size )
+              #  print("+les deux ", count + slice_size )
+                
+                node_emb = self.node_embeddings[i](torch.LongTensor(
+                    nodes_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size ]]
+                ).to(self.device)).view(
+                    len(shuffle_indices_nets[i][count:count + slice_size ]), -1).unsqueeze(2)
+                #print("node_embedding",neigh_emb)
+                cost1.append(
+                    nn.functional.logsigmoid(torch.bmm(neigh_emb, node_emb)).squeeze().mean() +
+                    nn.functional.logsigmoid(torch.bmm(
+                        self.neigh_embeddings[i](
+                            self.embed_freq.multinomial(
+                                len(shuffle_indices_nets[i][count:count + slice_size ]) *
+                                self.neigh_embeddings[i](
+                                    torch.LongTensor(
+                                        neigh_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size ]]
+                                    ).to(self.device)
+                                ).unsqueeze(2).view(
+                                    len(shuffle_indices_nets[i][count:count + slice_size ]), -1,
+                                    self.embedding_dim
+                                ).size(1) * self.negative_sampling_size, replacement=True
+                            ).to(self.device)
+                        ).view(
+                            len(shuffle_indices_nets[i][count:count + slice_size ]), -1, self.embedding_dim
+                        ).neg(),
+                        node_emb
+                    ).squeeze().sum(1).mean(0)
+                ))
         except IndexError:
             # Afficher les dimensions uniquement lorsque l'erreur se produit
             print(f"self.num_net: {self.num_net}")
@@ -412,59 +426,109 @@ class ManeAI(nn.Module):
                 print(f"node_embeddings[{i}] dimensions: {self.node_embeddings[i].weight.size()}")
             raise  # Relève l'exception pour afficher le traceback 
 
-        # First order collaboration
-        cost2 = [[hyp1 * (nn.functional.logsigmoid(torch.bmm(self.node_embeddings[j](Variable(torch.LongTensor(
-            nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
-            2).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1, self.embedding_dim),
-            self.node_embeddings[i](Variable(torch.LongTensor(
-                nodes_idx_nets[i][shuffle_indices_nets[i][
-                                  count:count + self.batch_size]]).to(self.device))).view(
-                len(shuffle_indices_nets[i][
-                    count:count + self.batch_size]), -1).unsqueeze(
-                2))).squeeze().mean() + nn.functional.logsigmoid(
-            torch.bmm(self.node_embeddings[j](self.embed_freq.multinomial(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]) * self.node_embeddings[j](Variable(
-                    torch.LongTensor(
-                        nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                        self.device))).unsqueeze(
-                    2).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1, self.embedding_dim).size(
-                    1) * self.negative_sampling_size,
-                replacement=True).to(self.device)).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                                                        self.embedding_dim).neg(), self.node_embeddings[i](Variable(
-                torch.LongTensor(
-                    nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(
-            0))
-                  for i in range(self.num_net) if i != j] for j in range(self.num_net)]
+        # collaboration du premiere ordre 
+        
+        cost2 = []
+        for i in range(self.num_net):
+            cost2_i = []
+            for j in range(self.num_net):
+                if i != j:
+                    slice_size = min(
+                        self.batch_size,
+                        len(shuffle_indices_nets[i]) - count
+                    )
 
-        # Second order collaboration
+                    node_emb_j = self.node_embeddings[j](torch.LongTensor(
+                        nodes_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size]]
+                    ).to(self.device)).unsqueeze(2).view(
+                        slice_size, -1, self.embedding_dim
+                    )
 
-        '''cost3 = [[hyp2 * (nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[j](Variable(torch.LongTensor(
-            neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
-            2).view(
-            len(shuffle_indices_nets[i][count:count + self.batch_size]), -1, self.embedding_dim),
-            self.node_embeddings[i](Variable(torch.LongTensor(
-                nodes_idx_nets[i][shuffle_indices_nets[i][
-                                  count:count + self.batch_size]]).to(self.device))).view(
-                len(shuffle_indices_nets[i][
-                    count:count + self.batch_size]), -1).unsqueeze(
-                2))).squeeze().mean() + nn.functional.logsigmoid(
-            torch.bmm(self.neigh_embeddings[j](self.embed_freq.multinomial(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]) * self.neigh_embeddings[j](Variable(
-                    torch.LongTensor(
-                        neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(
-                        self.device))).unsqueeze(
-                    2).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1, self.embedding_dim).size(
-                    1) * self.negative_sampling_size,
-                replacement=True).to(self.device)).view(len(shuffle_indices_nets[i][count:count + self.batch_size]), -1,
-                                                        self.embedding_dim).neg(), self.node_embeddings[i](Variable(
-                torch.LongTensor(
-                    nodes_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).view(
-                len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(
-            0))
-                  for i in range(self.num_net) if i != j] for j in range(self.num_net)]
-     '''
+                    node_emb_i = self.node_embeddings[i](torch.LongTensor(
+                        nodes_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size]]
+                    ).to(self.device)).view(
+                        slice_size, -1
+                    ).unsqueeze(2)
+
+                    cost2_i.append(
+                        hyp1 * (nn.functional.logsigmoid(torch.bmm(node_emb_j, node_emb_i)).squeeze().mean() +
+                                nn.functional.logsigmoid(
+                                    torch.bmm(
+                                        self.node_embeddings[j](
+                                            self.embed_freq.multinomial(
+                                                slice_size * self.node_embeddings[j](
+                                                    torch.LongTensor(
+                                                        nodes_idx_nets[i][
+                                                        shuffle_indices_nets[i][count:count + slice_size]]
+                                                    ).to(self.device)
+                                                ).unsqueeze(2).view(
+                                                    slice_size, -1, self.embedding_dim
+                                                ).size(1) * self.negative_sampling_size,
+                                                replacement=True
+                                            ).to(self.device)
+                                        ).view(
+                                            slice_size, -1, self.embedding_dim
+                                        ).neg(),
+                                        node_emb_i
+                                    ).squeeze().sum(1).mean(0)
+                                ))
+                    )
+
+            cost2.append(cost2_i)
+
+        
+
+        # collaboration du secondd ordre 
+        cost3 = []
+        for i in range(self.num_net):
+            cost3_i = []
+            for j in range(self.num_net):
+                if i != j:
+                    slice_size = min(
+                        self.batch_size,
+                        len(shuffle_indices_nets[i]) - count
+                    )
+
+                    neigh_emb_j = self.neigh_embeddings[j](torch.LongTensor(
+                        neigh_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size]]
+                    ).to(self.device)).unsqueeze(2).view(
+                        slice_size, -1, self.embedding_dim
+                    )
+
+                    node_emb_i = self.node_embeddings[i](torch.LongTensor(
+                        nodes_idx_nets[i][shuffle_indices_nets[i][count:count + slice_size]]
+                    ).to(self.device)).view(
+                        slice_size, -1
+                    ).unsqueeze(2)
+
+                    cost3_i.append(
+                        hyp2 * (nn.functional.logsigmoid(torch.bmm(neigh_emb_j, node_emb_i)).squeeze().mean() +
+                                nn.functional.logsigmoid(
+                                    torch.bmm(
+                                        self.neigh_embeddings[j](
+                                            self.embed_freq.multinomial(
+                                                slice_size * self.neigh_embeddings[j](
+                                                    torch.LongTensor(
+                                                        neigh_idx_nets[i][
+                                                        shuffle_indices_nets[i][count:count + slice_size]]
+                                                    ).to(self.device)
+                                                ).unsqueeze(2).view(
+                                                    slice_size, -1, self.embedding_dim
+                                                ).size(1) * self.negative_sampling_size,
+                                                replacement=True
+                                            ).to(self.device)
+                                        ).view(
+                                            slice_size, -1, self.embedding_dim
+                                        ).neg(),
+                                        node_emb_i
+                                    ).squeeze().sum(1).mean(0)
+                                ))
+                    )
+
+            cost3.append(cost3_i)
+
+
+
         sum_cost2 = []
         [[sum_cost2.append(j) for j in i] for i in cost2]
 

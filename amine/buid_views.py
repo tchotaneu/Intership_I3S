@@ -100,9 +100,198 @@ class DrawCurve():
 class GraphBuilder():
     """
     Classe pour construire différents types de graphes basés sur un graphe d'origine.
+
     """
-  
-    def construct_graph8(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
+    #######################____1_____#########################
+
+    def construct_graph1(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
+        """
+        Construit un nouveau graphe basé sur le graphe d'origine G, en extrayant les composantes connexes
+        des nœuds avec un poids inférieur à p_value.
+        
+        :param G: Le graphe d'origine.
+        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
+        :return: Le nouveau graphe construit.
+        """
+   
+            # Créer un nouveau graphe
+        G_prime = nx.Graph()
+            
+            # Ajouter tous les nœuds de G à G_prime
+        G_prime.add_nodes_from(G.nodes(data=True))  
+            # Parcourir toutes les arêtes dans G et les ajouter à G_prime si les deux nœuds ont une p_value < 0.05
+        for u, v,data in G.edges(data=True):
+            u_data = G.nodes[u]["weight"]
+            v_data = G.nodes[v]["weight"]
+                
+            if u_data <= p_value and v_data <= p_value:
+                G_prime.add_edge(u, v, **data)
+        if no_singletons:
+        # Exclure les nœuds singletons
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+        
+        return G_prime
+   ############################____2_____##############################
+    def construct_graph2(self, G: nx.Graph, p_value: float = 0.05 ,no_singleton:bool=True) -> nx.Graph:
+        """
+        Construit un graphe complet entre les nœuds avec un poids inférieur à p_value.
+        
+        :param G: Le graphe d'origine.
+        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
+        :return: Le nouveau graphe construit.
+        """
+        G_prime = nx.Graph()
+        G_prime.add_nodes_from(G.nodes(data=True))
+        # Ajouter tous les nœuds de G à G_prime
+        #nodes_singletons = [(node, data) for node, data in G.nodes(data=True) if data['weight'] > p_value]
+        nodes_pvalue = [node for node, data in G.nodes(data=True) if data['weight'] <= p_value]
+
+        G_prime.add_edges_from((u, v) for i, u in enumerate(nodes_pvalue) for v in nodes_pvalue[i + 1:])
+        if no_singleton:
+        # Exclure les nœuds singletons
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+        return G_prime
+    
+    #############################____3_____#############################
+
+    def construct_graph3(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
+        """
+        Construit un graphe en ajoutant des arêtes entre les nœuds avec un poids inférieur à p_value.
+        
+        :param G: Le graphe d'origine.
+        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
+        :return: Le nouveau graphe construit.
+        """
+        G_prime = nx.Graph()
+        G_prime.add_nodes_from(G.nodes(data=True))
+        G_prime.add_edges_from(G.edges(data=True))
+        
+        p_nodes = [node for node, data in G.nodes(data=True) if data['weight'] < p_value]
+        G_prime.add_edges_from((u, v) for i, u in enumerate(p_nodes) for v in p_nodes[i + 1:] if not G_prime.has_edge(u, v))
+
+        if no_singletons:
+        # Exclure les nœuds singletons
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+        
+        return G_prime
+    
+    ###############################____4_____###########################
+
+    def construct_graph4(self, G: nx.Graph, quantile: float = 0.4, no_singletons:bool = True) -> nx.Graph:
+        """
+        Construit un graphe en ajoutant des arêtes entre les nœuds dont la différence de "Z_Scores" est inférieure à 0.4.
+        
+        :param G: Le graphe d'origine.
+        :return: Le nouveau graphe construit.
+        """
+        G_prime = nx.Graph()
+        G_prime.add_nodes_from(G.nodes(data=True))
+        
+        quantiles = {node: min(10, norm.ppf(1 - data['weight'])) for node, data in G.nodes(data=True)}
+        G_prime.add_edges_from((u, v) for u, v in G.edges() if abs(quantiles[u] - quantiles[v]) < quantile)
+        if no_singletons:
+        # Exclure les nœuds singletons
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+        
+        return G_prime
+    
+   ###################################################################################################
+      ########### modele de construction derrivant du modele de construction 1
+   #####################################____5_____##############################################################
+    def construct_graph5(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
+        """
+        Construit un nouveau graphe en ajoutant des arêtes entre les nœuds ayant une p-value supérieure à 0.05,
+        mais avec la condition que ces arêtes doivent déjà exister dans le graphe d'origine,
+        et les nœuds ayant une p-value supérieure à 0.05 doivent avoir deux voisins avec une p-value inférieure à 0.05.
+        Les nœuds avec une p-value supérieure à 0.05 ne doivent pas être connectés à un autre noeud de pvalue inferieur à 0.05, car nous recherchons les nœuds
+        de p-value 0.05 qui sont isolés des autres nœuds de p-value 0.05 dans le graphe d'origine pour creer d'autre composante connexe avec des noeude de pvalue superieur à 0.05.
+
+        :param G: Le graphe d'origine.
+        :param p_value: La valeur seuil de la p-value.
+        :param no_singletons: Supprimer les nœuds isolés du nouveau graphe.
+        :return: Le nouveau graphe construit.
+        """
+        G_prime = nx.Graph()
+        G_prime.add_nodes_from(G.nodes(data=True))
+
+        for u, v, data in G.edges(data=True):
+            u_data = G.nodes[u]["weight"]
+            v_data = G.nodes[v]["weight"]
+
+            if u_data <= p_value and v_data <= p_value:
+                G_prime.add_edge(u, v, **data)
+            elif u_data <= p_value and v_data > p_value:
+                # Observe les voisins du nœud U s'il est connecté à un nœud de p-value inférieure à 0.05
+                u_neighbors = set(G.neighbors(u))
+                u_low_p_neighbors = [n for n in u_neighbors if G.nodes[n]["weight"] <= p_value]
+
+                # Observe les voisins du nœud V s'il est connecté à un nœud de p-value inférieure à 0.05
+                v_neighbors = set(G.neighbors(v))
+                v_low_p_neighbors = [n for n in v_neighbors if G.nodes[n]["weight"] <= p_value]
+
+                # Ajoute l'arête si U n'a pas de voisin avec une p-value inférieure à 0.05
+                # et que V est connecté à au moins deux nœuds de p-value inférieure à 0.05
+                if not u_low_p_neighbors and len(v_low_p_neighbors) >= 2:
+                    G_prime.add_edge(u, v, **data)
+
+        if no_singletons:
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+
+        return G_prime
+
+
+   ###################################____6_____###########################
+
+    def construct_graph6(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
+        """
+        Construit un graphe en ajoutant .
+        
+        :param G: Le graphe d'origine.
+        :return: Le nouveau graphe construit.
+        """
+        # Crée un nouveau graphe vide G_prime
+        G_prime = nx.Graph()
+        # Ajoute les nœuds de G à G_prime avec leurs données associées
+        G_prime.add_nodes_from(G.nodes(data=True))
+
+        # Liste des nœuds de p-value inférieure à 0.05 sans voisins de p-value égale à 0.05
+        nodes_without_neighbors = [node for node in G.nodes if G.nodes[node]["weight"] <= p_value and not any(
+            G.nodes[neighbor]["weight"] <= p_value for neighbor in G.neighbors(node))]
+
+        # Liste des nœuds de p-value inférieure à 0.05 avec au moins un voisin de p-value égale à 0.05
+        nodes_with_05_neighbors = [node for node in G.nodes if G.nodes[node]["weight"] <= p_value and any(
+            G.nodes[neighbor]["weight"] <= p_value for neighbor in G.neighbors(node))]
+
+        # Ajoute les nœuds à G_
+        G_prime.add_nodes_from(nodes_without_neighbors)
+        G_prime.add_nodes_from(nodes_with_05_neighbors)
+
+        # Crée les arêtes entre les nœuds sans voisins de p-value égale à 0.05
+        for u, v in combinations(nodes_without_neighbors, 2):
+            G_prime.add_edge(u, v)
+
+        # Crée les arêtes entre les nœuds ayant au moins un voisin de p-value égale à 0.05
+        for u, v in combinations(nodes_without_neighbors, 2):
+            if G.nodes[u]["weight"] <= p_value and G.nodes[v]["weight"] <= p_value :
+                G_prime.add_edge(u, v)
+
+        # Supprime les nœuds isolés de G_prime si l'option no_singletons est activée
+        if no_singletons:
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+
+        # Retourne le graphe modifié G_prime
+        return G_prime
+
+   
+   #########################################____7_____##########################################################  ancien graphe 8
+
+    def construct_graph7(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
         # Crée un nouveau graphe vide G_prime
         G_prime = nx.Graph()
         # Ajoute les nœuds de G à G_prime avec leurs données associées
@@ -145,8 +334,8 @@ class GraphBuilder():
         # Retourne le graphe modifié G_prime
         return G_prime
 
-#######################"
-    def construct_graph2(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
+   ###################################____8_____###########################
+    def construct_graph8(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
         # Crée un nouveau graphe vide G_prime
         G_prime = nx.Graph()
         # Ajoute les nœuds de G à G_prime avec leurs données associées
@@ -195,388 +384,6 @@ class GraphBuilder():
         # Retourne le graphe modifié G_prime
         return G_prime
 
-
-#######################
-    def construct_graph5(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
-        # Crée un nouveau graphe vide G_c
-        G_custom = nx.Graph()
-        # Ajoute les nœuds de G à G_prime avec leurs données associées
-        G_custom.add_nodes_from(G.nodes(data=True))
-
-        # Liste des nœuds de p-value inférieure à 0.05 sans voisins de p-value égale à 0.05
-        nodes_without_neighbors = [node for node in G.nodes if G.nodes[node]["weight"] <= p_value and not any(
-            G.nodes[neighbor]["weight"] <= p_value for neighbor in G.neighbors(node))]
-
-        # Liste des nœuds de p-value inférieure à 0.05 avec au moins un voisin de p-value égale à 0.05
-        nodes_with_05_neighbors = [node for node in G.nodes if G.nodes[node]["weight"] <= p_value and any(
-            G.nodes[neighbor]["weight"] <= p_value for neighbor in G.neighbors(node))]
-
-        # Ajoute les nœuds à G_
-        G_custom.add_nodes_from(nodes_without_neighbors)
-        G_custom.add_nodes_from(nodes_with_05_neighbors)
-
-        # Crée les arêtes entre les nœuds sans voisins de p-value égale à 0.05
-        for u, v in combinations(nodes_without_neighbors, 2):
-            G_custom.add_edge(u, v)
-
-        # Crée les arêtes entre les nœuds ayant au moins un voisin de p-value égale à 0.05
-        for u, v in combinations(nodes_without_neighbors, 2):
-            if G.nodes[u]["weight"] <= p_value and G.nodes[v]["weight"] <= p_value :
-                G_custom.add_edge(u, v)
-
-        # Supprime les nœuds isolés de G_custom si l'option no_singletons est activée
-        if no_singletons:
-            singletons = [node for node in G_custom.nodes if G_custom.degree(node) == 0]
-            G_custom.remove_nodes_from(singletons)
-
-        # Retourne le graphe modifié G_custom
-        return G_custom
-
-
-
-
-
-    def construct_graph8_(self, G: nx.Graph, p_value: float = 0.05, no_singletons: bool = True) -> nx.Graph:
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-
-        for u, v, data in G.edges(data=True):
-            u_data = G.nodes[u]["weight"]
-            v_data = G.nodes[v]["weight"]
-
-            if u_data <= p_value and v_data <= p_value:
-                G_prime.add_edge(u, v, **data)
-            elif u_data <= p_value and v_data > p_value:
-                # observons les voisins  du noeud U s'il est connecte à un noeud de pvalue inferieur à 0.05
-                u_neighbors = set(G.neighbors(u))
-                u_low_p_neighbors = [n for n in u_neighbors if G.nodes[n]["weight"] <= p_value]
-
-                # observons les voisins du noeud V s'il est connecte à un noeud de pvalue inferieur à 0.05
-                v_neighbors = set(G.neighbors(v))
-                v_low_p_neighbors = [n for n in v_neighbors if G.nodes[n]["weight"] <= p_value]
-
-                # ajoutons l'arrete si U n'a pas de voisin avec une pvalue inferieur à 0.05 et que V est au moins connecté à un noeud de p-value inferieur à 0.05
-                if not u_low_p_neighbors and v_low_p_neighbors:
-                    G_prime.add_edge(u, v, **data)
-
-        if no_singletons:
-            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
-            G_prime.remove_nodes_from(singletons)
-
-        return G_prime
-
-
-
-    def construct_graph1(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
-        """
-        Construit un nouveau graphe basé sur le graphe d'origine G, en extrayant les composantes connexes
-        des nœuds avec un poids inférieur à p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-   
-            # Créer un nouveau graphe
-        G_prime = nx.Graph()
-            
-            # Ajouter tous les nœuds de G à G_prime
-        G_prime.add_nodes_from(G.nodes(data=True))  
-            # Parcourir toutes les arêtes dans G et les ajouter à G_prime si les deux nœuds ont une p_value < 0.05
-        for u, v,data in G.edges(data=True):
-            u_data = G.nodes[u]["weight"]
-            v_data = G.nodes[v]["weight"]
-                
-            if u_data <= p_value and v_data <= p_value:
-                G_prime.add_edge(u, v, **data)
-        if no_singletons:
-        # Exclure les nœuds singletons
-            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
-            G_prime.remove_nodes_from(singletons)
-        
-        return G_prime
-        
-    
-    def construct_graph2_(self, G: nx.Graph, p_value: float = 0.05 ,no_singleton:bool=True) -> nx.Graph:
-        """
-        Construit un graphe complet entre les nœuds avec un poids inférieur à p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        # Ajouter tous les nœuds de G à G_prime
-        #nodes_singletons = [(node, data) for node, data in G.nodes(data=True) if data['weight'] > p_value]
-        nodes_pvalue = [node for node, data in G.nodes(data=True) if data['weight'] <= p_value]
-
-        G_prime.add_edges_from((u, v) for i, u in enumerate(nodes_pvalue) for v in nodes_pvalue[i + 1:])
-        if no_singleton:
-        # Exclure les nœuds singletons
-            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
-            G_prime.remove_nodes_from(singletons)
-        return G_prime
-    
-    def construct_graph3(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
-        """
-        Construit un graphe en ajoutant des arêtes entre les nœuds avec un poids inférieur à p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        G_prime.add_edges_from(G.edges(data=True))
-        
-        p_nodes = [node for node, data in G.nodes(data=True) if data['weight'] < p_value]
-        G_prime.add_edges_from((u, v) for i, u in enumerate(p_nodes) for v in p_nodes[i + 1:] if not G_prime.has_edge(u, v))
-
-        if no_singletons:
-        # Exclure les nœuds singletons
-            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
-            G_prime.remove_nodes_from(singletons)
-        
-        return G_prime
-    
-    def construct_graph4(self, G: nx.Graph, quantile: float = 0.4, no_singletons:bool = True) -> nx.Graph:
-        """
-        Construit un graphe en ajoutant des arêtes entre les nœuds dont la différence de "Z_Scores" est inférieure à 0.4.
-        
-        :param G: Le graphe d'origine.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        
-        quantiles = {node: min(10, norm.ppf(1 - data['weight'])) for node, data in G.nodes(data=True)}
-        G_prime.add_edges_from((u, v) for u, v in G.edges() if abs(quantiles[u] - quantiles[v]) < quantile)
-        if no_singletons:
-        # Exclure les nœuds singletons
-            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
-            G_prime.remove_nodes_from(singletons)
-        
-        return G_prime
-    
-    def construct_graph5_(self, G: nx.Graph, p_value: float = 0.05) -> nx.Graph:
-        """
-        Construit un graphe en créant une composante connexe pour les nœuds avec un poids supérieur à p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        
-        high_p_nodes = [node for node, data in G.nodes(data=True) if data['weight'] > p_value]
-        G_prime.add_edges_from((u, v) for i, u in enumerate(high_p_nodes) for v in high_p_nodes[i + 1:])
-        
-        return G_prime
-
-    
-    def construct_graph6(self, G: nx.Graph, p_value: float = 0.05) -> nx.Graph:
-        """
-        Construit un graphe en créant des arêtes entre les nœuds avec poids >= p_value.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        
-        G_prime.add_edges_from((u, v) for u, v in G.edges() if G.nodes[u]['weight'] >= p_value and G.nodes[v]['weight'] >= p_value)
-        
-        return G_prime
-    
-
-    
-    def construct_graph7(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = True) -> nx.Graph:
-        """
-        Construit un graphe en créant des composantes connexes complètes pour les nœuds avec des poids faibles et forts.
-        
-        :param G: Le graphe d'origine.
-        :param p_value: La valeur de p utilisée pour filtrer les nœuds.
-        :return: Le nouveau graphe construit.
-        """
-        G_prime = nx.Graph()
-        G_prime.add_nodes_from(G.nodes(data=True))
-        
-        low_p_nodes = [node for node, data in G.nodes(data=True) if data['weight'] <= p_value]
-        high_p_nodes = [node for node, data in G.nodes(data=True) if data['weight'] > p_value]
-        
-        G_prime.add_edges_from((u, v) for i, u in enumerate(low_p_nodes) for v in low_p_nodes[i + 1:])
-        G_prime.add_edges_from((u, v) for i, u in enumerate(high_p_nodes) for v in high_p_nodes[i + 1:])
-
-        
-        return G_prime
-
-    def isolated_low_nodes(self,G: nx.Graph, pvalue=0.05):
-        isolated_low_pvalue_nodes = []
-        
-        for node, data in G.nodes(data=True):
-            # Vérifie si la p-value est inférieure au seuil
-            if "weight" in data and data["weight"] < pvalue:
-                is_isolated = True
-                # Vérifie si le nœud est connecté à d'autres nœuds avec une p-value inférieure
-                for neighbor in G.neighbors(node):
-                    if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] < pvalue:
-                        is_isolated = False
-                        break
-                if is_isolated:
-                    isolated_low_pvalue_nodes.append(node)
-        
-        return set(isolated_low_pvalue_nodes)
-    
-    def low_nodes(self, G, pvalue=0.05):
-        low_pvalue_nodes = []
-
-        for node, data in G.nodes(data=True):
-            # Vérifie si la p-value est inférieure au seuil
-            if "weight" in data and data["weight"] <= pvalue:
-                low_pvalue_nodes.append(node)
-
-        return set(low_pvalue_nodes)
-    
-    def connected_low_nodes(self,G, threshold=0.05):
-        connected_low_pvalue_nodes = []
-
-        for node in G.nodes():
-            neighbors = list(G.neighbors(node))
-            low_pvalue_neighbors = [
-                neighbor for neighbor in neighbors
-                if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] <= threshold
-            ]
-
-            if len(low_pvalue_neighbors) > 0:
-                connected_low_pvalue_nodes.append(node)
-
-        return set(connected_low_pvalue_nodes)
-    
-
-    def get_low_pvalue_nodes_with_low_pvalue_neighbors(self,G, threshold=0.05):
-        low_pvalue_nodes = [node for node in G.nodes() if "weight" in G.nodes[node] and G.nodes[node]["weight"] < threshold]
-        result_nodes = []
-
-        for node in low_pvalue_nodes:
-            neighbors = list(G.neighbors(node))
-            low_pvalue_neighbors = [
-                neighbor for neighbor in neighbors
-                if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] <= threshold
-            ]
-
-            if low_pvalue_neighbors:
-                result_nodes.append(node)
-
-        return result_nodes
-    
-
-    def get_high_nodes_above_threshold_connected_005(self,G: nx.Graph, p_value_threshold: float = 0.05):
-        # Initialise une liste pour stocker les nœuds satisfaisant aux conditions
-        result_nodes = []
-
-        # Parcourt tous les nœuds du graphe G
-        for node in G.nodes(data=True):
-            node_id, node_data = node
-            # Vérifie si la p-value du nœud est supérieure à 0.05
-            if node_data["weight"] > p_value_threshold:
-                # Vérifie s'il est connecté à au moins un nœud ayant une p-value inférieure à 0.05
-                neighbors = G.neighbors(node_id)
-                low_pvalue_neighbors = [n for n in neighbors if G.nodes[n]["weight"] <= p_value_threshold]
-
-                if low_pvalue_neighbors:
-                    # Ajoute le nœud à la liste des résultats
-                    result_nodes.append(node_id)
-
-        return set(result_nodes)
-    
-
-
-    def get_filtre005(self, G: nx.Graph, p_value_threshold: float = 0.05):
-        # Initialise une liste pour stocker les nœuds satisfaisant aux conditions
-        result_nodes = []
-
-        # Parcourt tous les nœuds du graphe G
-        for node in G.nodes(data=True):
-            node_id, node_data = node
-            # Vérifie si la p-value du nœud est supérieure à 0.05
-            if node_data["weight"] > p_value_threshold:
-                # Vérifie s'il est connecté à au moins un nœud ayant une p-value inférieure à 0.05
-                neighbors = G.neighbors(node_id)
-                low_pvalue_neighbors = [n for n in neighbors if G.nodes[n]["weight"] <= p_value_threshold]
-
-                # Vérifie s'il est également connecté à au moins un nœud ayant une p-value supérieure à 0.05
-                high_pvalue_neighbors = [n for n in neighbors if G.nodes[n]["weight"] > p_value_threshold]
-
-                # Vérifie si high_pvalue_neighbors a au moins un voisin avec une p-value inférieure à 0.05
-               # has_low_pvalue_neighbor = any(G.nodes[high_neighbor]["weight"] <= p_value_threshold for high_neighbor in high_pvalue_neighbors)
-                if low_pvalue_neighbors and high_pvalue_neighbors :
-                #if low_pvalue_neighbors and high_pvalue_neighbors and has_low_pvalue_neighbor:
-                    # Ajoute le nœud à la liste des résultats
-                    result_nodes.append(node_id)
-
-        return set(result_nodes)
-    
-
-    def print_neighbors_with_pvalues(self, G: nx.Graph, nodes_set):
-        # Parcourt chaque nœud dans l'ensemble de nœuds
-        for node in nodes_set:
-            # Vérifie si le nœud est présent dans le graphe
-            if node in G.nodes:
-                # Récupère les voisins du nœud
-                print("***********************", node,"***********************")
-                neighbors = list(G.neighbors(node))
-                print("les voisins" ,neighbors)
-                # Affiche chaque voisin avec sa p-value associée
-                for neighbor in neighbors:
-                    neighbor_pvalue = G.nodes[neighbor]["weight"]
-                    print(f"Node: {neighbor}, P-value: {neighbor_pvalue}")
-
-
-    def getNoeuds (self, G: nx.Graph, p_value_threshold: float = 0.05, min_low_pvalue_neighbors: int = 2):
-        # Initialise une liste pour stocker les nœuds satisfaisant aux conditions
-        result_nodes = []
-
-        # Parcourt tous les nœuds du graphe G
-        for node in G.nodes(data=True):
-            node_id, node_data = node
-            # Vérifie si la p-value du nœud est supérieure à 0.05
-            if node_data["weight"] > p_value_threshold:
-                # Vérifie s'il est connecté à au moins un nœud ayant une p-value supérieure à 0.05
-                high_pvalue_neighbors = [n for n in G.neighbors(node_id) if G.nodes[n]["weight"] > p_value_threshold]
-
-                # Vérifie s'il est connecté à au moins deux nœuds ayant une p-value inférieure à 0.05
-                low_pvalue_neighbors = [n for n in G.neighbors(node_id) if G.nodes[n]["weight"] <= p_value_threshold]
-
-                if len(high_pvalue_neighbors) > 0 and len(low_pvalue_neighbors) >= min_low_pvalue_neighbors:
-                    # Ajoute le nœud à la liste des résultats
-                    result_nodes.append(node_id)
-                   #result_nodes.append((node_id, G.degree(node_id)))
-                  
-                # Ajoute le nœud à la liste des résultats avec son degré
-                
-        result_nodes.sort(key=lambda x: G.degree(x), reverse=True)
-        top_10_nodes = result_nodes[:100]
-
-        return set(top_10_nodes)
-
-# Exemple d'utilisation :
-# Supposons que G est votre graphe
-# result = get_nodes_above_threshold_connected_to_mixed_pvalues(G)
-# print(result)
-
-
-
-
-
-
-
-
-
-
-    
     def load_graph(self,filename: str) -> nx.Graph:
         G_reconstructed = nx.Graph()
         with open(filename, 'r') as f:
@@ -609,6 +416,160 @@ class GraphBuilder():
             for u, v, data in G.edges(data=True):
                 weight = data.get('weight', 1)  # Utilisons  1 comme poids par défaut si aucun poids n'est spécifié pour les arêtes
                 f.write(f"edge {u} {v} {weight}\n")
+
+
+
+
+
+
+class GraphFilter():
+   ######################les noeuds de o.o5 qui n'ont de de voisin 0.05 ############
+    def filter_low_nodes_isole(self, G: nx.Graph, pvalue=0.05):
+        """
+        Filtre les nœuds avec une p-value de 0.05 qui n'ont pas de voisins avec une p-value inférieure à 0.05.
+
+        :param G: Le graphe d'origine.
+        :param pvalue: La valeur seuil de la p-value.
+        :return: Ensemble des nœuds isolés avec une p-value de 0.05.
+        """
+        isolated_low_pvalue_nodes = []
+
+        for node, data in G.nodes(data=True):
+            # Vérifie si la p-value est inférieure au seuil
+            if "weight" in data and data["weight"] <= pvalue:
+                is_isolated = True
+                # Vérifie si le nœud est connecté à d'autres nœuds avec une p-value inférieure
+                for neighbor in G.neighbors(node):
+                    if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] < pvalue:
+                        is_isolated = False
+                        break
+                if is_isolated:
+                    isolated_low_pvalue_nodes.append(node)
+
+        return set(isolated_low_pvalue_nodes)
+
+    
+   ######################les noeuds de superieur à o.o5 qui n'ont de de voisin 0.05 ############
+    def filter_high_nodes_isole(self,G, threshold=0.05):
+        """
+        Identifie les nœuds de p-value supérieure au seuil spécifié qui ne sont pas connectés
+        à un nœud de p-value inférieure au seuil.
+
+        :param G: Le graphe d'origine.
+        :param threshold: La valeur seuil de la p-value.
+        :return: Ensemble des nœuds de p-value supérieure au seuil qui sont isolés.
+        """
+        isolated_high_pvalue_nodes = []
+
+        for node, data in G.nodes(data=True):
+            # Vérifie si la p-value est supérieure au seuil
+            if "weight" in data and data["weight"] > threshold:
+                is_isolated = True
+                # Vérifie si le nœud est connecté à un nœud de p-value inférieure au seuil
+                for neighbor in G.neighbors(node):
+                    if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] <= threshold:
+                        is_isolated = False
+                        break
+                if is_isolated:
+                    isolated_high_pvalue_nodes.append(node)
+
+        return set(isolated_high_pvalue_nodes)
+    
+    ######################les noeuds de superieur à o.o5 qui sont singletons ############
+    def classify_singleton_nodes(self,G, threshold=0.05):
+        """
+        Classe les nœuds singleton du graphe en deux catégories:
+        ceux avec une p-value inférieure au seuil spécifié et ceux avec une p-value supérieure.
+
+        :param G: Le graphe d'origine.
+        :param threshold: La valeur seuil de la p-value.
+        :return: Tuple contenant deux ensembles de nœuds classés par p-value.
+        """
+        low_pvalue_singletons = set()
+        high_pvalue_singletons = set()
+
+        singletons = [node for node in G.nodes if G.degree(node) == 0]
+
+        for node in singletons:
+            if "weight" in G.nodes[node]:
+                if G.nodes[node]["weight"] <= threshold:
+                    low_pvalue_singletons.add(node)
+                else:
+                    high_pvalue_singletons.add(node)
+
+        return low_pvalue_singletons, high_pvalue_singletons
+
+  ###################### ############
+    def low_nodes(self,G, pvalue=0.05):
+        """
+        Identifie les nœuds du graphe ayant une p-value inférieure ou égale au seuil spécifié.
+
+        :param G: Le graphe d'origine.
+        :param pvalue: La valeur seuil de la p-value.
+        :return: Ensemble des nœuds ayant une p-value inférieure ou égale au seuil.
+        """
+        low_pvalue_nodes = [node for node, data in G.nodes(data=True) if "weight" in data and data["weight"] <= pvalue]
+        return set(low_pvalue_nodes)
+
+    
+    def connected_low_nodes(self, G, threshold=0.05):
+        """
+        Identifie les nœuds du graphe qui sont connectés   avec un noeud de  p-value inférieure au seuil spécifié.
+
+        :param G: Le graphe d'origine.
+        :param threshold: La valeur seuil de la p-value.
+        :return: Ensemble des nœuds connectés ayant une p-value inférieure au seuil.
+        """
+        connected_low_pvalue_nodes = []
+
+        for node in G.nodes():
+            neighbors = list(G.neighbors(node))
+            low_pvalue_neighbors = [
+                neighbor for neighbor in neighbors
+                if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] <= threshold
+            ]
+
+            if len(low_pvalue_neighbors) > 0:
+                connected_low_pvalue_nodes.append(node)
+
+        return set(connected_low_pvalue_nodes)
+    
+  
+
+
+    def low_node_connecte(self,G, threshold=0.05):
+        low_pvalue_nodes = [node for node in G.nodes() if "weight" in G.nodes[node] and G.nodes[node]["weight"] <= threshold]
+        result_nodes = []
+
+        for node in low_pvalue_nodes:
+            neighbors = list(G.neighbors(node))
+            low_pvalue_neighbors = [
+                neighbor for neighbor in neighbors
+                if "weight" in G.nodes[neighbor] and G.nodes[neighbor]["weight"] <= threshold
+            ]
+
+            if low_pvalue_neighbors:
+                result_nodes.append(node)
+
+        return set(result_nodes)
+    
+    def print_neighbors_with_pvalues(self, G: nx.Graph, nodes_set):
+        # Parcourt chaque nœud dans l'ensemble de nœuds
+        for node in nodes_set:
+            # Vérifie si le nœud est présent dans le graphe
+            if node in G.nodes:
+                # Récupère les voisins du nœud
+                print("***********************", node,"***********************")
+                neighbors = list(G.neighbors(node))
+                print("les voisins" ,neighbors)
+                # Affiche chaque voisin avec sa p-value associée
+                for neighbor in neighbors:
+                    neighbor_pvalue = G.nodes[neighbor]["weight"]
+                    print(f"Node: {neighbor}, P-value: {neighbor_pvalue}")
+
+   
+
+
 
 
 
@@ -944,9 +905,9 @@ class Graph():
 		G = self.G
 		walks = []
 		nodes = list(G.nodes())
-		#print('Walk iteration:')
+		
 		for walk_iter in range(num_walks):
-			#print(str(walk_iter+1), '/', str(num_walks))
+			
 			random.shuffle(nodes)
 			for node in nodes:
 				walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
@@ -989,7 +950,7 @@ class Graph():
 		alias_nodes = {}
 		for node in G.nodes():
             #unnormalized_probs = [G.degree(nbr) for nbr in sorted(G.neighbors(node))]   
-			unnormalized_probs = [G.degree(nbr) for nbr in sorted(G.neighbors(node))] #1 modified
+			unnormalized_probs = [1 for nbr in sorted(G.neighbors(node))] #1 modified
 			norm_const = sum(unnormalized_probs)
 			normalized_probs =  [float(u_prob)/norm_const for u_prob in unnormalized_probs]
 			alias_nodes[node] = alias_setup(normalized_probs)
