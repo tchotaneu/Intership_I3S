@@ -440,7 +440,7 @@ class ManeAI(nn.Module):
 
         # Second order collaboration
 
-        cost3 = [[hyp2 * (nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[j](Variable(torch.LongTensor(
+        '''cost3 = [[hyp2 * (nn.functional.logsigmoid(torch.bmm(self.neigh_embeddings[j](Variable(torch.LongTensor(
             neigh_idx_nets[i][shuffle_indices_nets[i][count:count + self.batch_size]]).to(self.device))).unsqueeze(
             2).view(
             len(shuffle_indices_nets[i][count:count + self.batch_size]), -1, self.embedding_dim),
@@ -464,7 +464,7 @@ class ManeAI(nn.Module):
                 len(shuffle_indices_nets[i][count:count + self.batch_size]), -1).unsqueeze(2))).squeeze().sum(1).mean(
             0))
                   for i in range(self.num_net) if i != j] for j in range(self.num_net)]
-
+     '''
         sum_cost2 = []
         [[sum_cost2.append(j) for j in i] for i in cost2]
 
