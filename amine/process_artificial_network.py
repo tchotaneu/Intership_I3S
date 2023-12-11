@@ -18,24 +18,20 @@
 
 Entry point for the processing of real networks.
 """
-import networkx as nx
+
 import argparse
 import statistics
 import time
 from random import Random
-import sys 
-import os
-import numpy as np
-#importation des fichiers Models 
-import models
-#import modelMane
 
+import numpy as np
+from buid_views import Save_ouput
+import models
 from datasets import Datasets
 from module_detection import ModuleDetection
 from scores import Scores
-from buid_views import Archiver
-from buid_views import GraphBuilder
-import zipfile
+
+save=Save_ouput()
 
 def parse_arguments():
     """Parse arguments."""
@@ -46,7 +42,7 @@ def parse_arguments():
         dest="number_of_runs",
         type=int,
         required=False,
-        default=1000,  #1000 par defaut 
+        default=1000,
         help="specifies the number of runs (default=1000)",
     )
     parser.add_argument(
@@ -108,7 +104,7 @@ def parse_arguments():
         "--outfile",
         dest="outfile",
         required=False,
-        default=None,
+        default=True,
         help="name of the output file (default=no output)",
     )
     parser.add_argument(
@@ -162,108 +158,16 @@ def parse_arguments():
         default=1,
         help="mean of the foreground used by Batra method (default=1)",
     )
-    parser.add_argument(
-        '--my_model', 
-        dest="my_model",
-        type=str, 
-        choices=['Amine', 'ManeView', 'SaeView','Dbscan'],
-        required=True, 
-        help='Le modèle à utiliser.'
-        )
-
-    parser.add_argument(
-        '-graphe', 
-        '--constructGraph', 
-        dest="graphe",
-        type=str, 
-        choices=['1', '2', '3','4','5','6','7','8'],
-        required=False, 
-        help='La contruction de la deuxieme vue '
-        )
-    parser.add_argument(
-        '-no_sing', 
-        '--no_singleton', 
-        dest="no_singleton",
-        type=bool, 
-        default=False,
-        required=False, 
-        help='La contruction de la deuxieme vue avec les noeuds singletons '
-        )
-    parser.add_argument(
-        "-me", 
-        "--metrique", 
-        dest="metrique",
-        type=str, 
-        choices=['cosinus', 'pearson', 'eucludian'],
-        required=False, 
-        help='Le choix de la metrique '
-        )
-    parser.add_argument(
-        "--pvalue",  
-        dest="pvalue",
-        type=float, 
-        default=0.05,
-        required=False, 
-        help='Le choix de la p_value '
-
-        )
-    parser.add_argument(
-        "--pipe",  
-        dest="pipeline",
-        type=bool, 
-        default=False,
-        required=False, 
-        help="pour la reduction en de  l'espace vectoriel en deux dimension uniquemen pour le model Dbscam "
-        )
     return parser.parse_args()
-
 
 
 if __name__ == "__main__":
     # Entry point.
     arg = parse_arguments()
-    if arg.my_model != 'Amine' and (arg.graphe is None or arg.metrique is None):
-           print("Si le modèle n'est pas 'Amine', vous devez spécifier les arguments 'graphe' et 'metrique'.")
 
-    #preparation des repertoire de sauvegarde .
-    arch=Archiver() 
-   
-    if arg.my_model == 'Amine':
-        save =arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size)
-    elif arg.my_model== 'ManeView':
-        save=arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size, arg.metrique,arg.graphe)
-    elif arg.my_model== 'SaeView':
-        save =arch.create_model_directories("sauvegarde", arg.my_model,arg.module_size, arg.metrique,arg.graphe,arg.no_singleton)
-    else:
-        print("Modèle non défini")
-    
-    nom_fichier=os.path.basename(save)
-    file_zip=nom_fichier+".zip"
-    file_resultat=nom_fichier+".csv"
-    reptoire_resultat=save+"/resultats"
-    reptoire_zip="sauvegarde/fichierZip/"+arg.my_model
-    arch.delete_file_ifexist(file_resultat,reptoire_resultat)
-    arch.delete_file_ifexist(file_zip,reptoire_zip)
-    
-    #print("la racine est ",save)
-
-
-    """ 
-    +-------------------------------------------------------------------------------------+
-    We could use : 
-     ---------> Node2vec() model with    --my_model Amine     -me {cosinus,eucludian,pearson}  -graphe {1,2,3,4}
-     ---------> ManeView() model  with   --my_model ManeView  -me {cosinus,eucludian,pearson}  -graphe {1,2,3,4} 
-     ---------> SaeView() model  with    --my_model SaeView   -me {cosinus,eucludian,pearson}  -graphe {1,2}  --no_sing True  # le calcul est trop important lorsque la deuxieme vue n'a pas de donné manquant .
-     ---------> Dbscan()  model  with    --my_model Dbscan    -me{cosinus,eucludian}  --embedding {ManeView ,SaeView }  -graphe {1,2,3,4,5,6,7} --pipeline {False ,True } 
-
-    +-------------------------------------------------------------------------------------+
-
-    Entry point for the processing of real networks.
-    """  
-    # pour charger modele 
-    
-
-    ##########""
+    # Use Node2vec model
+    #model = models.Node2vec()
+    model = models.MultiView()
     # Use aggregation zscore as fitness function.
     fitness_fun = lambda the_graph, clus: Scores.aggregation_from_pvalue(
         the_graph, clus, "weight"
@@ -273,92 +177,61 @@ if __name__ == "__main__":
     P_PROB = 0.09
     Q_PROB = 0.70
     NB_INITIAL_NODES = 3
-    stockage=False
+
     f1_scores = []
     if arg.outfile:
         outfile = open(arg.outfile, "w")
         outfile.write("#graph,time(s),nb found,real size,true hits,pvalue\n")
     for ctr in range(arg.number_of_runs):
-        if stockage:
-            builG=GraphBuilder()
-            my_path="ManeView_cos/ManeView_cos_size_10_gra_1/dataset/Vue1.txt"
-            G=builG.load_graph(my_path)#lecture du graphe
-            G.graph["nb_nodes"]=1000
-           # {230, 487, 136, 585, 10, 363, 904, 210, 212, 702}
-        else :
-            if arg.graph_generation == "guyondata":
-                G = Datasets.get_guyon_graph(ctr + 1)
-            elif arg.graph_generation == "gencat":
-                G = Datasets.get_gencat_graph(
-                    arg.network_size,
-                    arg.network_size * 16,
-                    arg.nb_modules,
-                    arg.nb_modules * [arg.module_size],
-                    ctr,
-                )
-            else:
-                G = Datasets.get_scale_free_graph(
-                    arg.network_size,
-                    NB_INITIAL_NODES,
-                    arg.nb_modules,
-                    arg.module_size,
-                    P_PROB,
-                    Q_PROB,
-                    ctr,
-                )
-                if arg.removed_edges > 0:
-                    nbtoremove = int(G.number_of_edges() * arg.removed_edges)
-                    rng = Random(ctr)
-                    edges_to_remove = rng.sample(G.edges, nbtoremove)
-                    G.remove_edges_from(edges_to_remove)
-                    G.graph["nb_edges"] = G.number_of_edges()
-       
-        # initialize the model
-        if arg.verbose:
-            print("****************")
-            print("resultats du run : ",ctr + 1 )
-            #model = models.Node2vec()
-        if arg.my_model == 'Amine':
-            model = models.Node2vec()
-            model.init(G,save_dire=save)
-        elif arg.my_model == 'ManeView':
-            model = models.ManeView()
-            #defautgroup ={1:{230, 487, 136, 585, 10, 363, 904, 210, 212, 702}}
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G),savedirec=save)
-        elif arg.my_model == 'SaeView':
-            model = models.SaeView()
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,my_dict=Datasets.get_groups(G),savedirec=save)
-        elif arg.my_model == 'Dbscan':
-            model = models.DbscanView()
-            model.init(G,arg.pvalue,arg.graphe,arg.metrique,arg.my_model,arg.no_singleton,Datasets.get_groups(G),arg.pipe,savedirec=save)
+        print("**********************"+"Run_"+str(ctr+1)+"__**************************")
+        
+        if arg.graph_generation == "guyondata":
+            G = Datasets.get_guyon_graph(ctr + 1)
+        elif arg.graph_generation == "gencat":
+            G = Datasets.get_gencat_graph(
+                arg.network_size,
+                arg.network_size * 16,
+                arg.nb_modules,
+                arg.nb_modules * [arg.module_size],
+                ctr,
+            )
         else:
-            raise ValueError(f"Modèle inconnu: {arg.my_model}")
-       # model.init(G)
-       # print(arg.graph_generation)
-        #sys.exit()
+            G = Datasets.get_scale_free_graph(
+                arg.network_size,
+                NB_INITIAL_NODES,
+                arg.nb_modules,
+                arg.module_size,
+                P_PROB,
+                Q_PROB,
+                ctr,
+            )
+            if arg.removed_edges > 0:
+                nbtoremove = int(G.number_of_edges() * arg.removed_edges)
+                rng = Random(ctr)
+                edges_to_remove = rng.sample(G.edges, nbtoremove)
+                G.remove_edges_from(edges_to_remove)
+                G.graph["nb_edges"] = G.number_of_edges()
+
+        # initialize the model
+        model.init(G)
+
         # call module detection method
         start_time = time.perf_counter()
-        if not isinstance(model, models.DbscanView):
-            module_detection = ModuleDetection(
-                    G, model, fitness_fun, background_correction=True
-                )
-                # do the prediction
-            results = module_detection.predict_modules(
-                    max_nb_modules=arg.nb_modules, cutoff=0.05
-                )
-        else:
-            results=[]
-            cluter=model.dbscan_cluster(eps=0.3,min_samples=3)
-            result=model.evaluate_cluter(cluter,Datasets.get_groups(G))
-            if result:
-              results.append(result[0])
+        module_detection = ModuleDetection(
+            G, model, fitness_fun, background_correction=True
+        )
+
+        # do the prediction
+        results = module_detection.predict_modules(
+            max_nb_modules=arg.nb_modules, cutoff=0.05
+        )
         end_time = time.perf_counter()
         pvalue = 0
         if results:
             pvalue = results[0][2]
-        truehits =Datasets.get_groups(G)
-        if arg.verbose:
-            print("truehits", truehits)
+        truehits = Datasets.get_groups(G)
+        print("truehits", truehits)
+
         pred = set()
         nb_clust = 0
         for cl in results:
@@ -420,36 +293,12 @@ if __name__ == "__main__":
         )
         moyenne=statistics.mean(f1_scores)
         moyenne_formattee = f"{moyenne:.5f}"
-
-    #opreration de sauvergarde et de supression.
-        if arg.my_model=="Amine":
-             arch.save_in_csv(save+"/resultats/"+nom_fichier+".csv",
+        save.save_in_csv("amine/output/resultats/resultat.csv",
                                {'graphe_run': ctr + 1,'longueur_predit': nb_pred,
                                 'true_hits': nb_th,'nombre_noeud_touve': nb_found,
                                 'f1_score': f"{f1_scores[-1]:.5f}",
                                 'mean': moyenne_formattee ,
                                 'Truehits': truehits,'Noeud_predit':pred})
-        else:
-            arch.save_in_csv(save+"/resultats/"+nom_fichier+".csv", 
-                             {'graphe_run': ctr + 1,'metrique':arg.metrique, 
-                              'modele_vue2':arg.graphe,'longueur_predit': nb_pred,
-                              'true_hits': nb_th,'nombre_noeud_touve': nb_found,
-                              'f1_score': f"{f1_scores[-1]:.5f}",
-                              'mean':moyenne_formattee ,'Truehits': truehits,'Noeud_predit':pred})
-        arch.copy_directory(save,arch.dest+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
-
-        arch.add_to_zip(arch.dest+arg.my_model+"/"+nom_fichier+".zip",arch.dest+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
-     
-        arch.deleteFileInDirectory(save+"/embedding")
-        if arg.my_model != "Amine"  :
-                arch.deleteFileInDirectory(save+"/dataset")
-                arch.deleteFileInDirectory(save+"/graphique_fonction")
-        if arg.my_model=="ManeView" :
-                arch.deleteFileInDirectory(save+"/Couples_ids")
-                arch.deleteFileInDirectory(save+"/Couples_nodes")
-                arch.deleteFileInDirectory(save+"/Marches")
-                arch.deleteFileInDirectory(save+"/Paires")
-        arch.delete_directory(repertoire=arch.dest+"/"+arg.my_model+"/"+nom_fichier+"_"+str(ctr+1))
-  
+        save.copyAndDelete("amine/output","amine/save/run"+str(ctr))
     if arg.outfile:
         outfile.close()

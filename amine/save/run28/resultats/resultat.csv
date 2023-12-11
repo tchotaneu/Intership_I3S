@@ -1,0 +1,2 @@
+graphe_run,longueur_predit,true_hits,nombre_noeud_touve,f1_score,mean,Truehits,Noeud_predit
+28,2,10,0,0.00000,0.34113,"{1: {641, 354, 291, 733, 16, 242, 370, 948, 278, 157}}","{34, 867}"

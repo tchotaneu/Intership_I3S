@@ -25,7 +25,7 @@ import statistics
 import itertools
 import networkx as nx
 from scipy.stats import norm
-from models import Model
+from .models import Model
 
 
 class ModuleDetection:
@@ -360,4 +360,3 @@ class ModuleDetection:
         #     2 - zscore
         #     3 - pvalue
         return predicted_modules
-
