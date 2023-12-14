@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.autograd import Variable
+#from torch.autograd import Variable
 from scipy.spatial.distance import squareform, pdist
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 #from buid_views import DrawCurve as draw
 
 
-import networkx as nx
-import os
-from abc import ABC, abstractmethod
+#import networkx as nx
+#import os
+#from abc import ABC, abstractmethod
 
 
 

@@ -34,7 +34,7 @@ from scipy.spatial import distance
 from sklearn.metrics.pairwise import cosine_similarity
 from .dimension_reduction import node2vec
 from .dimension_reduction.pecanpy import node2vec as n2v
-from .buid_views import GraphBuilder,Pair_nodes,DrawCurve
+from .buid_views import GraphBuilder,Pair_nodes,DrawCurve,Save_ouput
 from .model_NN import   ManeAI,Sae_AI
 import torch
 import time
@@ -415,6 +415,7 @@ class MultiView(Model):
         self.vue1 = nx.Graph()
         self.vue2 = nx.Graph()
         self.pair=Pair_nodes()
+        self.save=Save_ouput()
         self.constrution=GraphBuilder()
         self.dessin_courbe=DrawCurve()
         self.bias_attenuation=0.75
@@ -432,10 +433,8 @@ class MultiView(Model):
         self.read_pair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-
-       
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 100, },
-                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length': 75, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 50, 'walk_length': 200, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 30, 'walk_length': 150, }, ]  
         
     def get_most_similar(self, elt: str, number: int):
         """
@@ -506,7 +505,6 @@ class MultiView(Model):
         correlations = np.array([pearsonr(reference_vector, vector)[0] for vector in vectors])
         # Trier les indices des vecteurs en fonction de leur corrélation (en ordre décroissant)
         similar_indices = np.argsort(correlations)[::-1]
-
         return similar_indices
 
 
@@ -533,6 +531,8 @@ class MultiView(Model):
     def init(self, G: nx.Graph):
         self.vue1=G  
         self.vue2 =self.constrution.construct_graph1(G)
+        self.save.save_graph(self.vue1,self.savedirectory+"/dataset/graphe1.txt")
+        self.save.save_graph(self.vue2,self.savedirectory+"/dataset/graphe2.txt")
         Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
         self.dessin_courbe.draw_Single_curve(Y,
                                              title="courbe d'apprentissage de la fonction de perte ", 

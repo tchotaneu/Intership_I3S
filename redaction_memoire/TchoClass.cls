@@ -33,6 +33,8 @@
 %Chapter form
 \RequirePackage[Bjornstrup]{fncychap}
 \usepackage{everypage}
+\usepackage{caption}
+
 %package pour image 
 \RequirePackage{graphicx}
 \RequirePackage{textcomp}
@@ -221,3 +223,14 @@ contents={%
    {\endlist}
    {\item}
 % end: 
+
+\usepackage{titlesec}
+
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\setcounter{secnumdepth}{4}
+\counterwithout{table}{section}
+

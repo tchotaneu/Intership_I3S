@@ -305,11 +305,13 @@ def process(
     )
 
     # Use Node2vec model
-    model = models.Node2vec()
+    #model = models.Node2vec()
+    # Use Multiview
+    model = models.MultiView()
 
     # initialize the model
-    model.init(G, precomputed=precomputed_model)
-
+    #model.init(G, precomputed=precomputed_model)
+    model.init(G)
     # call module detection method
     module_detection = ModuleDetection(
         G, model, fitness_fun, precomputed_model=precomputed_model
