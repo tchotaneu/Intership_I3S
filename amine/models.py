@@ -462,6 +462,8 @@ class MultiView(Model):
             indices_similaires=self.use_similar_euclidean(vectors , reference_vector)
         else :
             print("metrique non defini ")
+         # Exclure le nœud de référence lui-même de la liste des nœuds similaires
+        indices_similaires = [i for i in indices_similaires if i != indice_label]
         labels_similaires = labels_vectors [indices_similaires]
         
         return list(map(int, labels_similaires.tolist()))
