@@ -1,3 +1,7 @@
 *.gz
 *.temp
 *.zip
+*.txt
+*.~lock.1-Hmga2_positive_vs_negative_string_network.xlsx
+*.pyc
+*.log
