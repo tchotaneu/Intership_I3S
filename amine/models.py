@@ -433,8 +433,8 @@ class MultiView(Model):
         self.read_pair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 50, 'walk_length': 200, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 30, 'walk_length': 150, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 200, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 150, }, ]  
         
     def get_most_similar(self, elt: str, number: int):
         """
@@ -462,6 +462,8 @@ class MultiView(Model):
             indices_similaires=self.use_similar_euclidean(vectors , reference_vector)
         else :
             print("metrique non defini ")
+         # Exclure le nœud de référence lui-même de la liste des nœuds similaires
+        indices_similaires = [i for i in indices_similaires if i != indice_label]
         labels_similaires = labels_vectors [indices_similaires]
         
         return list(map(int, labels_similaires.tolist()))
