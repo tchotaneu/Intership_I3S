@@ -14,11 +14,13 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent))
 from amine.process_real_network import process
 from amine.arg_parser import parse_arguments
 from amine.parameters import Param
+from amine.models import MultiView
 
 
 arg = parse_arguments("amine")
 Param.verbose = arg.verbose
-
+MultiView.read_pair = arg.readpair
+MultiView.readembedding = arg.reademb
 # Load the program parameters from the 'config.yaml' file if it exists
 try:
     with open("config.yaml", "r") as f:

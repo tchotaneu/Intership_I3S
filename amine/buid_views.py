@@ -402,6 +402,26 @@ class Save_ouput:
                # print(f"Fichier supprimé dans le dossier source : {file_path}")
 
 
+    def read_embedding(self,filename):
+        """
+        Lit un fichier texte contenant des vecteurs (chaque ligne est un vecteur)
+        et retourne un tableau NumPy.
+
+        :param filename: str, le chemin du fichier à lire.
+        :return: ndarray, un tableau NumPy contenant les vecteurs.
+        """
+        try:
+            # Charger les données depuis le fichier
+            vecteurs = np.loadtxt(filename)
+            return vecteurs
+        except Exception as e:
+            print(f"Une erreur est survenue lors de la lecture du fichier : {e}")
+            return None
+
+
+
+
+
 
 
 

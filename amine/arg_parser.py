@@ -129,4 +129,22 @@ def parse_arguments(prog):
         default=False,
         help="displays results on screen",
     )
+    parser.add_argument(
+        "-rp",
+        "--readpair",
+        dest="readpair",
+        required=False,
+        type=bool,
+        default=False,
+        help="read pair nodes",
+    )
+    parser.add_argument(
+        "-emb",
+        "--reademb",
+        dest="reademb",
+        required=False,
+        type=bool,
+        default=False,
+        help="dread embedding ",
+    )
     return parser.parse_args()

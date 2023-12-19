@@ -407,7 +407,8 @@ class SVD(Model):
         return self.most_similar[elt][:number]
 
 class MultiView(Model):
-
+    read_pair=False 
+    readembedding=False
     def __init__(self):
         """Declare variables."""
         self.savedirectory="amine/output"
@@ -430,11 +431,11 @@ class MultiView(Model):
         self.model = None
         self.device = None
         self.cuda=True
-        self.read_pair=False # True si nous voulons utiliser les fichiers de la derniers operations 
+        self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 50, 'walk_length': 200, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 30, 'walk_length': 150, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 10, 'walk_length': 10, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 10, 'walk_length': 10, }, ]  
         
     def get_most_similar(self, elt: str, number: int):
         """
@@ -462,6 +463,7 @@ class MultiView(Model):
             indices_similaires=self.use_similar_euclidean(vectors , reference_vector)
         else :
             print("metrique non defini ")
+        indices_similaires=[i for i in indices_similaires if i!=indice_label]
         labels_similaires = labels_vectors [indices_similaires]
         
         return list(map(int, labels_similaires.tolist()))
@@ -529,17 +531,32 @@ class MultiView(Model):
 
     
     def init(self, G: nx.Graph):
-        self.vue1=G  
-        self.vue2 =self.constrution.construct_graph1(G)
-        self.save.save_graph(self.vue1,self.savedirectory+"/dataset/graphe1.txt")
-        self.save.save_graph(self.vue2,self.savedirectory+"/dataset/graphe2.txt")
-        Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
-        self.dessin_courbe.draw_Single_curve(Y,
-                                             title="courbe d'apprentissage de la fonction de perte ", 
-                                             x_label="epoques",
-                                             y_label="loss periodes", 
-                                             save_file=self.savedirectory+"/drawCurve/loss_function.png")
- 
+        
+        if MultiView.read_pair:
+            self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
+            self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
+            self.dessin_courbe.draw_Single_curve(Y,
+                                                title="courbe d'apprentissage de la fonction de perte ", 
+                                                x_label="epoques",
+                                                y_label="loss periodes", 
+                                                save_file=self.savedirectory+"/drawCurve/loss_function.png")
+        
+        elif MultiView.readembedding:
+            
+            self.model=self.save.read_embedding("amine/output/embedding/Embedding_Entrainer_epoques_12_.txt")
+        
+        else:
+            self.vue1=G  
+            self.vue2 =self.constrution.construct_graph1(G)
+            self.save.save_graph(self.vue1,self.savedirectory+"/dataset/graphe1.txt")
+            self.save.save_graph(self.vue2,self.savedirectory+"/dataset/graphe2.txt")
+            Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
+            self.dessin_courbe.draw_Single_curve(Y,
+                                                title="courbe d'apprentissage de la fonction de perte ", 
+                                                x_label="epoques",
+                                                y_label="loss periodes", 
+                                                save_file=self.savedirectory+"/drawCurve/loss_function.png")
+    
   
     def compute_embedding(self, vue1: nx.Graph ,vue2: nx.Graph):
         """
