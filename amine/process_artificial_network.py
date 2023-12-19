@@ -25,13 +25,12 @@ import time
 from random import Random
 
 import numpy as np
-from buid_views import Save_ouput
-import models
-from datasets import Datasets
-from module_detection import ModuleDetection
-from scores import Scores
 
-save=Save_ouput()
+from . import models
+from .datasets import Datasets
+from .module_detection import ModuleDetection
+from .scores import Scores
+
 
 def parse_arguments():
     """Parse arguments."""
@@ -96,7 +95,7 @@ def parse_arguments():
         dest="verbose",
         required=False,
         action="store_true",
-        default=True,
+        default=False,
         help="displays results on screen",
     )
     parser.add_argument(
@@ -104,7 +103,7 @@ def parse_arguments():
         "--outfile",
         dest="outfile",
         required=False,
-        default=True,
+        default=None,
         help="name of the output file (default=no output)",
     )
     parser.add_argument(
@@ -166,8 +165,8 @@ if __name__ == "__main__":
     arg = parse_arguments()
 
     # Use Node2vec model
-    #model = models.Node2vec()
-    model = models.MultiView()
+    model = models.Node2vec()
+
     # Use aggregation zscore as fitness function.
     fitness_fun = lambda the_graph, clus: Scores.aggregation_from_pvalue(
         the_graph, clus, "weight"
@@ -183,8 +182,6 @@ if __name__ == "__main__":
         outfile = open(arg.outfile, "w")
         outfile.write("#graph,time(s),nb found,real size,true hits,pvalue\n")
     for ctr in range(arg.number_of_runs):
-        print("**********************"+"Run_"+str(ctr+1)+"__**************************")
-        
         if arg.graph_generation == "guyondata":
             G = Datasets.get_guyon_graph(ctr + 1)
         elif arg.graph_generation == "gencat":
@@ -291,14 +288,5 @@ if __name__ == "__main__":
         print(
             f"{ctr + 1} len={nb_pred} true_hits={nb_th} found={nb_found} f1_score={f1_scores[-1]:.5f}, mean={statistics.mean(f1_scores):.5f}, variance={statistics.pstdev(f1_scores):.5f}, Q25={quartiles[0]:.5f}, Q50={quartiles[1]:.5f}, Q75={quartiles[2]:.5f}, low={low:.5f}, high={high:.5f}, out_low=[{','.join(out_low)}], out_high=[{','.join(out_high)}] pvalue={pvalue}"
         )
-        moyenne=statistics.mean(f1_scores)
-        moyenne_formattee = f"{moyenne:.5f}"
-        save.save_in_csv("amine/output/resultats/resultat.csv",
-                               {'graphe_run': ctr + 1,'longueur_predit': nb_pred,
-                                'true_hits': nb_th,'nombre_noeud_touve': nb_found,
-                                'f1_score': f"{f1_scores[-1]:.5f}",
-                                'mean': moyenne_formattee ,
-                                'Truehits': truehits,'Noeud_predit':pred})
-        save.copyAndDelete("amine/output","amine/save/run"+str(ctr))
     if arg.outfile:
         outfile.close()

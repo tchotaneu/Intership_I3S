@@ -88,7 +88,6 @@ except FileNotFoundError:
 print("Downloading files")
 
 # String
-
 print(f"Data from String database version {Param.string_version}")
 for specie_name, _ in Param.specie2id.items():
     local_filename, local_path = Param.get_string_ppi_file(specie_name)
@@ -114,8 +113,8 @@ distant_name = f"https://downloads.thebiogrid.org/Download/BioGRID/Release-Archi
 pbar = ProgressBar(local_filename)
 local_name, headers = urllib.request.urlretrieve(distant_name, local_path, pbar)
 pbar.pbar.finish()
-# Intact
 
+# Intact
 print("Data from IntAct database")
 local_filename, local_path = Param.get_intact_file()
 distant_name = (
