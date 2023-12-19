@@ -535,6 +535,7 @@ class MultiView(Model):
         if MultiView.read_pair:
             self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
             self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
+            Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
             self.dessin_courbe.draw_Single_curve(Y,
                                                 title="courbe d'apprentissage de la fonction de perte ", 
                                                 x_label="epoques",
@@ -579,7 +580,8 @@ class MultiView(Model):
         node2idx = {n: idx for (idx, n) in enumerate(common_nodes)}
         idx2node = {idx: n for (idx, n) in enumerate(common_nodes)}
         if self.read_pair:
-            nodes_idx_nets, neigh_idx_nets = self.read_word2vec_pairs(self.nviews)
+            nodes_idx_nets, neigh_idx_nets = self.read_word2vec_pairs(current_path="amine/output",
+                                                                      nviews=self.nviews)
         else:
             nodes_idx_nets = []
             neigh_idx_nets = []
@@ -674,7 +676,30 @@ class MultiView(Model):
         for node in common_nodes:
             multinomial_nodesidx.append(degrees_idx[node2idx[node]] ** (self.bias_attenuation))
 
-        return multinomial_nodesidx          
+        return multinomial_nodesidx       
+    
+    def read_word2vec_pairs(self,current_path, nviews):
+        """
+
+        :param current_path: path for two files, one keeps only the node indices, the other keeps only the neighbor node
+        indices of already generated pairs (node,neighbor), i.e, node indices and neighbor indices are kept separately.
+        method "construct_word2vec_pairs" can be used to obtain these files.
+        :E.g.:
+
+        for pairs (9,2) (4,5) (8,6) one file keeps 9 4 8 the other file keeps 2 5 6.
+
+        :param nviews: number of views
+        :return: Two lists for all views, each list keeps the node indices of node pairs (node, neigh).
+        nodes_idx_nets for node, neigh_idx_nets for neighbor
+        """
+
+        nodes_idx_nets = []
+        neigh_idx_nets = []
+
+        for n_net in range(nviews):
+            neigh_idx_nets.append(np.loadtxt(current_path + "/Couples_nodes/neighidxPairs_" + str(n_net + 1) + ".txt"))
+            nodes_idx_nets.append(np.loadtxt(current_path + "/Couples_ids/nodesidxPairs_" + str(n_net + 1) + ".txt"))
+        return nodes_idx_nets, neigh_idx_nets   
 
     def choice_bach_size(self, input_value):
         if input_value <= 30000:

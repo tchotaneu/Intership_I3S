@@ -145,6 +145,6 @@ def parse_arguments(prog):
         required=False,
         type=bool,
         default=False,
-        help="dread embedding ",
+        help="read embedding",
     )
     return parser.parse_args()
