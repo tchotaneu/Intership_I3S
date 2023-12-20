@@ -72,7 +72,7 @@ class Node2vec(Model):
         """Declare variables."""
         self.model = None
         self.num_walks = 20  # 10
-        self.walk_length = 100  # 80
+        self.walk_length = 200  # 80
         self.directed = False
         self.param_p = 1  # 4  # 0.15
         self.param_q = 1  # 2
@@ -420,8 +420,8 @@ class MultiView(Model):
         self.constrution=GraphBuilder()
         self.dessin_courbe=DrawCurve()
         self.bias_attenuation=0.75
-        self.dimensions=48
-        self.epochs=12
+        self.dimensions=64
+        self.epochs=2
         self.negative_sampling=15
         self.learning_rate=0.001
         self.alpha=1
@@ -434,10 +434,10 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 10, 'walk_length': 10, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 10, 'walk_length': 10, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 25, 'walk_length': 200, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 150, }, ]  
         
-    def get_most_similar(self, elt: str, number: int):
+    def get_most_similar(self, elt: None, number: int):
         """
         Collect similar nodes.
 
@@ -449,7 +449,9 @@ class MultiView(Model):
                  number of most similar nodes to collect
 
         """
+        
         label=float(elt)
+        indices = np.where(self.model[:,0] == label)[0]
         indice_label = np.where(self.model[:,0]== label)[0][0]
         labels_vectors=self.model[:, 0]
         reference_vector = self.model[indice_label, 1:]
@@ -536,6 +538,9 @@ class MultiView(Model):
             self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
             self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
             Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
+            self.model = self.model.astype(float)
+
+            print(self.model.shape)
             self.dessin_courbe.draw_Single_curve(Y,
                                                 title="courbe d'apprentissage de la fonction de perte ", 
                                                 x_label="epoques",
@@ -600,7 +605,9 @@ class MultiView(Model):
                                                                             node2idx=node2idx,
                                                                             directory=self.savedirectory
                                                                                         )
-                        
+                print(neigh_idx.dtype,"les types de donnee pour neigh_idx ")
+                print(nodes_idx.dtype,"les types de donnnee pour nodes_idx")
+
                 nodes_idx_nets.append(nodes_idx)
                 neigh_idx_nets.append(neigh_idx)
 
@@ -697,13 +704,17 @@ class MultiView(Model):
         neigh_idx_nets = []
 
         for n_net in range(nviews):
-            neigh_idx_nets.append(np.loadtxt(current_path + "/Couples_nodes/neighidxPairs_" + str(n_net + 1) + ".txt"))
-            nodes_idx_nets.append(np.loadtxt(current_path + "/Couples_ids/nodesidxPairs_" + str(n_net + 1) + ".txt"))
+            neigh_idxx=np.loadtxt(current_path + "/Couples_nodes/neighidxPairs_" + str(n_net + 1) + ".txt")
+            neigh_idxx = neigh_idxx.astype(int)
+            neigh_idx_nets.append(neigh_idxx)
+            nodes_idxx=(np.loadtxt(current_path + "/Couples_ids/nodesidxPairs_" + str(n_net + 1) + ".txt"))
+            nodes_idxx=nodes_idxx.astype(int)
+            nodes_idx_nets.append(nodes_idxx)
         return nodes_idx_nets, neigh_idx_nets   
 
     def choice_bach_size(self, input_value):
         if input_value <= 30000:
-            return 100
+            return 1000
         elif 30000 < input_value <= 40000:
             return 150
         elif 40000 < input_value <= 60000:

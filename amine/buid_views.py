@@ -485,9 +485,9 @@ class Pair_nodes():
         start_time = time.time()
         walks = G_.simulate_walks(n_walk, walk_length)
         end = time.time()
-        walk_file = path + "/Marches/Walks_" + str(view_id) + ".txt"
+        #walk_file = path + "/Marches/Walks_" + str(view_id) + ".txt"
         elapsed = end - start_time
-        self.save_walks(walks, walk_file, elapsed)
+        #self.save_walks(walks, walk_file, elapsed)
         
         
         start_time = time.time()
