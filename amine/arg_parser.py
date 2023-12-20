@@ -147,4 +147,13 @@ def parse_arguments(prog):
         default=False,
         help="read embedding",
     )
+    parser.add_argument(
+        "-data",
+        "--dataset",
+        dest="dataset",
+        required=False,
+        type=bool,
+        default=False,
+        help="read embedding",
+    )
     return parser.parse_args()

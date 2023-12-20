@@ -409,6 +409,7 @@ class SVD(Model):
 class MultiView(Model):
     read_pair=False 
     readembedding=False
+    dataset=False
     def __init__(self):
         """Declare variables."""
         self.savedirectory="amine/output"
@@ -434,8 +435,8 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 25, 'walk_length': 200, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 150, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 200, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 100, }, ]  
         
     def get_most_similar(self, elt: None, number: int):
         """
@@ -534,13 +535,22 @@ class MultiView(Model):
     
     def init(self, G: nx.Graph):
         
-        if MultiView.read_pair:
+        if MultiView.dataset:
+        
+            self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
+            self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
+            Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
+            self.dessin_courbe.draw_Single_curve(Y,
+                                                title="courbe d'apprentissage de la fonction de perte ", 
+                                                x_label="epoques",
+                                                y_label="loss periodes", 
+                                                save_file=self.savedirectory+"/drawCurve/loss_function.png")
+        
+        elif MultiView.read_pair:
             self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
             self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
             Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
             self.model = self.model.astype(float)
-
-            print(self.model.shape)
             self.dessin_courbe.draw_Single_curve(Y,
                                                 title="courbe d'apprentissage de la fonction de perte ", 
                                                 x_label="epoques",
