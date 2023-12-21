@@ -410,7 +410,8 @@ class MultiView(Model):
     read_pair=False 
     readembedding=False
     dataset=False
-    epochs=12
+    epochs=10
+    dimension=48
     def __init__(self):
         """Declare variables."""
         self.savedirectory="amine/output"
@@ -422,8 +423,8 @@ class MultiView(Model):
         self.constrution=GraphBuilder()
         self.dessin_courbe=DrawCurve()
         self.bias_attenuation=0.75
-        self.dimensions=48
-        self.epochs=12
+        self.dimensions=MultiView.dimension
+        self.epochs=MultiView.epochs
         self.negative_sampling=10
         self.learning_rate=0.001
         self.alpha=1
@@ -453,7 +454,7 @@ class MultiView(Model):
         """
         
         label=float(elt)
-        indices = np.where(self.model[:,0] == label)[0]
+       # indices = np.where(self.model[:,0] == label)[0]
         indice_label = np.where(self.model[:,0]== label)[0][0]
         labels_vectors=self.model[:, 0]
         reference_vector = self.model[indice_label, 1:]
@@ -586,7 +587,6 @@ class MultiView(Model):
           G2 : graphe de la deuxieme vue
             
         """ 
-        self.epochs=MultiView.epochs   
         G=[vue1,vue2]
         values_lossFunction=[] 
         if torch.cuda.is_available() and not self.cuda:

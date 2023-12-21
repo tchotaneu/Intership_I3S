@@ -23,6 +23,7 @@ MultiView.read_pair = arg.readpair
 MultiView.readembedding = arg.reademb
 MultiView.epochs=arg.epochs
 MultiView.dataset=arg.dataset
+MultiView.dimension=arg.dimension
 # Load the program parameters from the 'config.yaml' file if it exists
 try:
     with open("config.yaml", "r") as f:

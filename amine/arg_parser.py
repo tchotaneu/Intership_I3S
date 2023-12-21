@@ -162,8 +162,17 @@ def parse_arguments(prog):
         dest="epochs",
         required=False,
         type=int,
-        default=12,
+        default=10,
         help="number of epochs for training embbeding ",
     )
-    epochs=12
+    parser.add_argument(
+        "-dim",
+        "--dimension",
+        dest="dimension",
+        required=False,
+        type=int,
+        default=48,
+        help="dimension d'une vue d'embbeding ",
+    )
+    
     return parser.parse_args()
