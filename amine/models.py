@@ -410,6 +410,7 @@ class MultiView(Model):
     read_pair=False 
     readembedding=False
     dataset=False
+    epochs=12
     def __init__(self):
         """Declare variables."""
         self.savedirectory="amine/output"
@@ -421,9 +422,9 @@ class MultiView(Model):
         self.constrution=GraphBuilder()
         self.dessin_courbe=DrawCurve()
         self.bias_attenuation=0.75
-        self.dimensions=64
-        self.epochs=2
-        self.negative_sampling=15
+        self.dimensions=48
+        self.epochs=12
+        self.negative_sampling=10
         self.learning_rate=0.001
         self.alpha=1
         self.beta=1
@@ -435,8 +436,8 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length': 200, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 10, 'walk_length': 100, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 23, 'walk_length':200, },
+                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length':150, }, ]  
         
     def get_most_similar(self, elt: None, number: int):
         """
@@ -540,6 +541,7 @@ class MultiView(Model):
             self.vue1=self.save.load_graph("amine/output/dataset/graphe1.txt")
             self.vue2=self.save.load_graph("amine/output/dataset/graphe2.txt")
             Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
+            self.model = self.model.astype(float)
             self.dessin_courbe.draw_Single_curve(Y,
                                                 title="courbe d'apprentissage de la fonction de perte ", 
                                                 x_label="epoques",
@@ -560,6 +562,7 @@ class MultiView(Model):
         elif MultiView.readembedding:
             
             self.model=self.save.read_embedding("amine/output/embedding/Embedding_Entrainer_epoques_12_.txt")
+            self.model = self.model.astype(float)
         
         else:
             self.vue1=G  
@@ -582,7 +585,8 @@ class MultiView(Model):
           G1   :  graphe de la premier vue
           G2 : graphe de la deuxieme vue
             
-        """    
+        """ 
+        self.epochs=MultiView.epochs   
         G=[vue1,vue2]
         values_lossFunction=[] 
         if torch.cuda.is_available() and not self.cuda:
@@ -724,7 +728,7 @@ class MultiView(Model):
 
     def choice_bach_size(self, input_value):
         if input_value <= 30000:
-            return 1000
+            return 100
         elif 30000 < input_value <= 40000:
             return 150
         elif 40000 < input_value <= 60000:

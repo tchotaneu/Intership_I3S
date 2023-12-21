@@ -154,6 +154,16 @@ def parse_arguments(prog):
         required=False,
         type=bool,
         default=False,
-        help="read embedding",
+        help="read dataset ",
     )
+    parser.add_argument(
+        "-ep",
+        "--epochs",
+        dest="epochs",
+        required=False,
+        type=int,
+        default=12,
+        help="number of epochs for training embbeding ",
+    )
+    epochs=12
     return parser.parse_args()
