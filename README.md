@@ -1,14 +1,14 @@
-# AMINE (Active Module Identification through Network Embedding)
+# AMINE versus Multiview (Active Module Identification through Network Embedding)
 
 Implementation of the active module identification method described in the manuscript:
 
->A network embedding approach to identify active modules in biological interaction networks. C Pasquier, V Guerlais, D Pallez, R Rapetti-Mauss, O Soriani. Life Science Alliance 6 (9).
+>A network embedding approach to identify active modules in biological interaction networks. C Pasquier, V Guerlais, D Pallez, R Rapetti-Mauss, O Soriani,G Tchotaneu.
 
 ## Installation
 
 Clone the repository and change to the project directory
 ```bash
-git clone https://github.com/claudepasquier/amine.git
+git clone https://github.tchotaneu/Intership.git
 cd amine
 ```
 
