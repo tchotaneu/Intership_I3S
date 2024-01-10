@@ -1,5 +1,5 @@
 # AMINE_Multiview (Active Module Identification through Network Embedding with multiview)
-
+AMINE_Multiview is an  extension of the AMINE project, an innovative method for active module identification in biological networks (https://github.com/claudepasquier/amine). This extension version, AMINE_Multiview(https://github.com/tchotaneu/Intership_I3S), is an experiment that particularly emphasizes the use of data from multiple views (multiview). It incorporates neural network architectures with attention mechanisms. This innovative approach aims to fully leverage information from different perspectives (views) of biological data, providing a better understanding and more precise identification of active modules.
 ## Installation
 
 Clone the repository and change to the project directory
@@ -33,15 +33,19 @@ Additionally, you have the option to create a virtual environment using the buil
 - For Linux or macOS :
 
 ```bash
-python3 -m venv amine-env
+python3 -m venv --python=python3.6 amine-env
 source amine-env/bin/activate
+pip install networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl pyyaml torch torchvision matplotlib
+
 ```
 
 - For Windows:
 
 ```bash
-python -m venv amine-env
+python3 -m venv --python=python3.6 amine-env
 .\amine-env\Scripts\activate
+pip install  networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl pyyaml torch torchvision matplotlib
+
 ```
 Choose the method that best suits your operating system. 
 
