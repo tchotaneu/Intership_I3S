@@ -86,10 +86,23 @@ The program can be executed with the command:
 ```bash
 python -m amine
 ```
-The -h option displays explanations of the available options. A typical execution can be performed with:
+The -h option displays explanations of the available options. 
 ```bash
-python -m amine --expvalue ./data/real/expression/chiou_2017/Hmga2_positive_vs_negative.csv -g 0 -l 2 -p 6 -s mouse -n string -o ./data/results/Hmga2_positive_vs_negative_string_network.xlsx -v
+python -m amine -h
 ```
+For example with STRING Network :
+```bash
+python -m amine --expvalue ./data/real/expression/chiou_2017/Hmga2_positive_vs_negative.csv -g 0 -l 2 -p 6 -s mouse -n string -o ./data/results/Hmga2_positive_vs_negative_string_network.xlsx -v -ep 12
+```
+For example with IntAct Network:
+```bash
+python -m amine --expvalue ./data/real/expression/chiou_2017/Hmga2_positive_vs_negative.csv -g 0 -l 2 -p 6 -s mouse -n intact -o ./data/results/Hmga2_positive_vs_negative_intact_network_1.xlsx -ep 12
+```
+For example with  BioGRID Network:
+```bash
+python -m amine --expvalue ./data/real/expression/chiou_2017/Hmga2_positive_vs_negative.csv -g 0 -l 2 -p 6 -s mouse -n biogrid -o ./data/results/Hmga2_positive_vs_negative_biogrid_network_1.xlsx -ep 12
+```
+
 The command above runs amine on the result of a differential expression analysis stored in the file specified with the parameter **--expvalue**. The parameters **-g**, **-l** and **-p** are used to specify the column with the gene names, the log2 fold changes and the p-values respectively. Numbering starts at 0, which means that zero identifies the first column. The parameter **-s** is used to indicate the specie and the parameter **-n** is used to indicate the origin of the interaction network (in the example, it is the STRING database). The parameter **-o** allows to specify the path to a file to write the results.
 
 The file "execute_reals.sh" contains examples of commands to process data from the paper of Chiou 2017 using different networks.
