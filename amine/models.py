@@ -411,7 +411,7 @@ class MultiView(Model):
     readembedding=False
     dataset=False
     epochs=10
-    dimension=48
+    dimension=64
     def __init__(self):
         """Declare variables."""
         self.savedirectory="amine/output"
@@ -429,7 +429,7 @@ class MultiView(Model):
         self.learning_rate=0.001
         self.alpha=1
         self.beta=1
-        self.metrique="pearson" #  "pearson" =1 , "cosinus"=2 ,  "eucludian"=3
+        self.metrique="cosinus" #  "pearson" =1 , "cosinus"=2 ,  "eucludian"=3
         self.directory = None
         self.model = None
         self.device = None
@@ -437,8 +437,8 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length':100, },
-                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length':100, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 15, 'walk_length':100, },
+                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 15, 'walk_length':100, }, ]  
         
     def get_most_similar(self, elt: None, number: int):
         """
