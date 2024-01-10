@@ -1,30 +1,49 @@
-# AMINE versus Multiview (Active Module Identification through Network Embedding)
-
-Implementation of the active module identification method described in the manuscript:
-
->A network embedding approach to identify active modules in biological interaction networks. C Pasquier, V Guerlais, D Pallez, R Rapetti-Mauss, O Soriani,G Tchotaneu.
+# AMINE_Multiview (Active Module Identification through Network Embedding with multiview)
 
 ## Installation
 
 Clone the repository and change to the project directory
 ```bash
-git clone https://github.tchotaneu/Intership.git
+git clone https://github.com/tchotaneu/Intership_I3S.git
+
 cd amine
 ```
 
-To set up the required dependencies for the project, you should create a virtual environment using your preferred package manager. For example, you can use mamba to create the environment including all the dependencies with the following commands:
+To set up the necessary dependencies for the project, you can create a virtual environment using your preferred package manager. In this example, we will demonstrate using mamba, a more efficient alternative to conda. The following commands will create the environment and install all dependencies:
+
 ```bash
+# Using mamba
 mamba env create -n amine-env -f environment.yml
 mamba activate amine-env
 ```
-Mamba is a better choice than conda for this task, as it can perform the installation faster than conda version 23.1.0, which can take more than 10 minutes.
 
-Alternatively, you can create the environment and install manually the dependencies using conda with the following commands:
+Mamba is recommended over conda for this task, especially for larger installations, as it typically performs the installation significantly faster than conda, especially versions older than 23.1.0, which may take over 10 minutes.
+
+Alternatively, you can manually create the environment and install dependencies using conda with the following commands:
+
 ```bash
+# Using conda
 conda create -n amine-env python=3.6
 conda activate amine-env
-conda install -c conda-forge -c anaconda -c numba networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl python-levenshtein pyyaml   pytorch  torchvision  matplotlib
+conda install -c conda-forge -c anaconda -c numba networkx scipy gensim numba pandas xlrd scikit-learn powerlaw progressbar2 openpyxl python-levenshtein pyyaml
 ```
+
+Additionally, you have the option to create a virtual environment using the built-in Python venv module. The specific commands depend on your operating system:
+
+- For Linux or macOS :
+
+```bash
+python3 -m venv amine-env
+source amine-env/bin/activate
+```
+
+- For Windows:
+
+```bash
+python -m venv amine-env
+.\amine-env\Scripts\activate
+```
+Choose the method that best suits your operating system. 
 
 At this point, you can download network files with the following command:
 ```bash

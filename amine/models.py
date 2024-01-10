@@ -437,8 +437,8 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':10, 'num_walks': 23, 'walk_length':200, },
-                                 {'p':1,  'q':1, 'window_size':10, 'num_walks': 20, 'walk_length':150, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length':100, },
+                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 20, 'walk_length':100, }, ]  
         
     def get_most_similar(self, elt: None, number: int):
         """
