@@ -171,7 +171,7 @@ def parse_arguments(prog):
         dest="dimension",
         required=False,
         type=int,
-        default=48,
+        default=64,
         help="dimension d'une vue d'embbeding ",
     )
     
