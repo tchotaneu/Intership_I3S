@@ -437,8 +437,8 @@ class MultiView(Model):
         self.readpair=False # True si nous voulons utiliser les fichiers de la derniers operations 
         self.output= True # true si nous voulons sauvegarde les fichiers 
         self.nviews=2
-        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':5, 'num_walks': 15, 'walk_length':100, },
-                                 {'p':1,  'q':1, 'window_size':5, 'num_walks': 15, 'walk_length':100, }, ]  
+        self.parametreNode2vec=[ {'p':1,  'q':1, 'window_size':15, 'num_walks': 20, 'walk_length':50, },
+                                 {'p':0.5,  'q':1, 'window_size':10, 'num_walks': 15, 'walk_length':50, }, ]  
         
     def get_most_similar(self, elt: None, number: int):
         """
@@ -567,7 +567,7 @@ class MultiView(Model):
         
         else:
             self.vue1=G  
-            self.vue2 =self.constrution.construct_graph1(G)
+            self.vue2 =self.constrution.construct_speciale(G)
             self.save.save_graph(self.vue1,self.savedirectory+"/dataset/graphe1.txt")
             self.save.save_graph(self.vue2,self.savedirectory+"/dataset/graphe2.txt")
             Y,self.model =self.compute_embedding(self.vue1,self.vue2) 
@@ -642,6 +642,7 @@ class MultiView(Model):
         start_init = time.time()
         while epo <= self.epochs - 1:
             epo += 1
+            print("epoque est ", epo)
             optimizer = torch.optim.Adam(modelMane.parameters(), lr=self.learning_rate)
             running_loss = 0
             num_batches = 0
@@ -742,8 +743,8 @@ class MultiView(Model):
         elif 350000 < input_value <= 550000:
             return 1000
         elif 500000 < input_value <= 1000000:
-            return 1500
+            return 25000
         else:
-            return 5000
+            return 2500000
 
 

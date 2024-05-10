@@ -41,7 +41,7 @@ def parse_arguments():
         dest="number_of_runs",
         type=int,
         required=False,
-        default=1000,
+        default=10,
         help="specifies the number of runs (default=1000)",
     )
     parser.add_argument(
@@ -95,7 +95,7 @@ def parse_arguments():
         dest="verbose",
         required=False,
         action="store_true",
-        default=False,
+        default=True,
         help="displays results on screen",
     )
     parser.add_argument(
@@ -165,8 +165,8 @@ if __name__ == "__main__":
     arg = parse_arguments()
 
     # Use Node2vec model
-    model = models.Node2vec()
-
+    #model = models.Node2vec()
+    model = models.MultiView()
     # Use aggregation zscore as fitness function.
     fitness_fun = lambda the_graph, clus: Scores.aggregation_from_pvalue(
         the_graph, clus, "weight"

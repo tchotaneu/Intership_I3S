@@ -18,6 +18,154 @@ class GraphBuilder():
     Classe pour construire différents types de graphes basés sur un graphe d'origine.
 
     """
+    
+    ########################################################
+    
+    
+    def construct_speciale(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = False) -> nx.Graph:
+        # Créer un nouveau graphe pondéré sur les arrêtes 
+        def graphePondere_edges(G):
+            # Créer un nouveau graphe pondéré pour stocker les arêtes avec les nouveaux poids
+            graphe_pondere = nx.Graph()
+            graphe_pondere.add_nodes_from(G.nodes(data=True))  # Copier les attributs des nœuds
+            
+            # Parcourir toutes les paires de nœuds connectés dans le graphe
+            for node1, node2 in G.edges():
+                # Récupérer les poids des nœuds connectés
+                weight_node1 = G.nodes[node1]['weight']
+                weight_node2 = G.nodes[node2]['weight']
+                
+                # Calculer le poids de l'arête en fonction des poids des nœuds
+                edge_weight = 1 - abs(weight_node1 - weight_node2)
+                
+                # Ajouter l'arête avec le nouveau poids au graphe pondéré
+                graphe_pondere.add_edge(node1, node2, weight=edge_weight)
+            
+            return graphe_pondere
+        
+        def create_edges_neighbors(node, neighbor_list):
+            """
+            Crée des arêtes entre un nœud donné et une liste de voisins, avec un poids de 1.
+
+            Args:
+                node: Le nœud à partir duquel les arêtes sont créées.
+                neighbor_list: Liste des voisins du nœud.
+
+            Returns:
+                Une liste d'arêtes avec un poids de 1 entre le nœud et ses voisins.
+            """
+            # Vérifier si node est bien un nœud valide
+            if not isinstance(node, (int, str)):
+                raise ValueError("Le nœud doit être un entier ou une chaîne de caractères.")
+
+            # Vérifier si neighbor_list est bien une liste de nœuds valides
+            if not all(isinstance(neighbor, (int, str)) for neighbor in neighbor_list):
+                raise ValueError("neighbor_list doit être une liste d'entiers ou de chaînes de caractères.")
+
+            # Créer les arêtes avec un poids de 1
+            edges = [(node, neighbor, {'weight': 1}) for neighbor in neighbor_list]
+            return edges
+        
+
+        def wu_palmer_similarity(graph, node):
+            shortest_paths = nx.shortest_path_length(graph, source=node, weight='weight')
+            total_distance_to_common_root = sum(shortest_paths.values())
+            similarities = {}
+            for other_node in graph.nodes():
+                if other_node != node:
+                    distance_to_common_root = shortest_paths[other_node]
+                    wu_palmer_sim = (2 * distance_to_common_root) / (total_distance_to_common_root + 2 * distance_to_common_root)
+                    similarities[other_node] = wu_palmer_sim
+            return similarities
+
+        def top_k_similar_nodes(graph, node, k):
+            similarities = wu_palmer_similarity(graph, node)
+            sorted_nodes = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+            top_k_nodes = [node for node, similarity in sorted_nodes[:k]]
+            return top_k_nodes
+        
+        vue2_tapon = nx.Graph()
+        vue2=nx.Graph()
+        vue2.add_nodes_from(G.nodes())
+        vue2_tapon=graphePondere_edges(G)
+        for node in vue2.nodes():
+            #node_similaire=wu_palmer_similarity(vue2,node)
+            top_k_Node=top_k_similar_nodes(vue2_tapon,node,10)
+            list_edges=create_edges_neighbors(node,top_k_Node)
+            vue2.add_edges_from(list_edges)
+    
+        return vue2
+    
+    
+    
+   
+
+    def construct_graph11(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = False) -> nx.Graph:
+        """
+        Crée un graphe secondaire basé sur les p-values des nœuds dans un graphe de protéine-protéine.
+
+        Args:
+        - G: Graphe de protéine-protéine (obj NetworkX)
+        - pvalue_threshold: Seuil de p-value pour la sélection des nœuds (float)
+
+        Returns:
+        - G_secondary: Graphe secondaire basé sur les p-values (obj NetworkX)
+        """
+
+        # Créer un nouveau graphe secondaire
+        G_secondary = nx.Graph()
+
+        # Sélectionner les nœuds dont les p-values sont inférieures au seuil
+        selected_nodes = [node for node in G.nodes() if G.nodes[node]["weight"] < p_value]
+
+        # Ajouter les nœuds sélectionnés au sous-graphe
+        # G_secondary.add_nodes_from(selected_nodes)
+        G_secondary.add_nodes_from(G.nodes(data=True)) 
+        # Extraire les voisins des nœuds sélectionnés et leurs relations
+        for node in selected_nodes:
+            neighbors = list(G.neighbors(node))
+            edges = [(node, neighbor) for neighbor in neighbors]
+            G_secondary.add_edges_from(edges)
+        singletons = [node for node in  G_secondary.nodes if  G_secondary.degree(node) == 0]
+        print("le nombre de noeud",len(singletons))
+        return G_secondary
+
+    # Exemple d'utilisation :
+    # G est votre graphe de protéine-protéine avec les p-values stockées comme attributs sur les nœuds
+    # pvalue_threshold est votre seuil de p-value pour la sélection des nœuds
+    # G_secondary = create_secondary_graph(G, pvalue_threshold)
+
+        
+        
+    
+    ########################################################
+    def construct_graph111(self, G: nx.Graph, threshold: float = 0.9, no_singletons: bool = False) -> nx.Graph:
+    # Créer un nouveau graphe
+        G_prime = nx.Graph()
+        
+        # Ajouter tous les nœuds de G à G_prime
+        G_prime.add_nodes_from(G.nodes(data=True))  
+        
+        # Parcourir toutes les arêtes dans G et les ajouter à G_prime si la condition est remplie
+        for u, v, data in G.edges(data=True):
+            u_data = G.nodes[u]["weight"]
+            v_data = G.nodes[v]["weight"]
+            
+            # Vérifier si la condition est remplie pour conserver l'arête
+            if abs(1 - abs(u_data - v_data)) <= threshold:
+                G_prime.add_edge(u, v, **data)
+        singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+        print("le nombre de noeud",len(singletons))
+        # Exclure les nœuds singletons si nécessaire
+        if no_singletons:
+            singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+            G_prime.remove_nodes_from(singletons)
+        
+        return G_prime
+
+    
+
+    
     #######################____1_____#########################
 
     def construct_graph1(self, G: nx.Graph, p_value: float = 0.05,no_singletons:bool = False) -> nx.Graph:
@@ -42,6 +190,8 @@ class GraphBuilder():
                 
             if u_data <= p_value and v_data <= p_value:
                 G_prime.add_edge(u, v, **data)
+        singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
+        print("le nombre de noeud singletons",len(singletons))
         if no_singletons:
         # Exclure les nœuds singletons
             singletons = [node for node in G_prime.nodes if G_prime.degree(node) == 0]
